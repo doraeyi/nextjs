@@ -45,22 +45,10 @@ const LoginPage = () => {
     onSuccess: tokenResponse => {
       const access_token = tokenResponse.access_token;
 
-      fetch('/api/playfab-login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ accessToken: access_token }),
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          router.push('/');
-        } else {
-          console.error('PlayFab error:', data.error);
-        }
-      })
-      .catch(err => console.error('Error:', err));
+      if (access_token) {
+        console.log(access_token)
+        router.push("/")
+      }
     },
     onError: err => {
       console.error('Google login error:', err);
