@@ -3,51 +3,65 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/mysql'
 import { signJwtAccessToken } from '@/lib/jwt'
 
-
 export const GET = async (req) => {
-
-
-    return NextResponse.json({})
+    return NextResponse.json({ message: "Login endpoint is available" })
 }
 
 export const POST = async (req) => {
-    const { username, password } = await req.json()
+    const { account, password } = await req.json()
+
+    if (!account || !password) {
+        return NextResponse.json({ error: "用戶名和密碼都是必填的" }, { status: 400 })
+    }
 
     try {
         const connection = await connectToDatabase();
 
-        const [results, fields] = await connection.query(
-            'SELECT * FROM user WHERE username = ? AND password = ?',
-            [username, password]
+        // 查詢用戶
+        const [results] = await connection.query(
+            'SELECT * FROM user WHERE account = ?',
+            [account]
         );
 
-        console.log(results)
-
-        if (results.length > 0) {
-            const accessToken = signJwtAccessToken(
-                {
-                    username: results[0].username,
-                    gender: results[0].gender,
-                    email: results[0].email,
-                },
-                {
-                    // 設定到期時間 
-                    expiresIn: '7d'
-                }
-            )
-            console.log('token', accessToken)
-            cookies().set('token', accessToken, {
-                // 一天
-                expires: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000)
-            })
+        if (results.length === 0) {
+            // 用戶不存在，返回錯誤信息
+            return NextResponse.json({ error: "用戶未註冊", redirect: "/register" }, { status: 404 })
         }
-        // console.log(results); 
-        // console.log(fields); 
 
-        return NextResponse.json({ msg: "success" })
+        const user = results[0];
+
+        console.log('User found:', { ...user, password: '****' });
+
+        // 驗證密碼（注意：這裡假設密碼是明文存儲的，實際應用中應該使用哈希）
+        if (user.password !== password) {
+            console.log('Login failed: Incorrect password');
+            console.log('Stored password:', user.password);
+            console.log('Provided password:', password);
+            return NextResponse.json({ error: "密碼錯誤" }, { status: 401 })
+        }
+        // 生成 JWT token
+        const accessToken = signJwtAccessToken(
+            {
+                account: user.account,
+                gender: user.gender,
+                email: user.email,
+            },
+            {
+                expiresIn: '7d'
+            }
+        )
+
+        // 設置 cookie
+        cookies().set('token', accessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7天
+        })
+
+        return NextResponse.json({ message: "登錄成功" }, { status: 200 })
     } catch (err) {
-        console.error('Error executing query:', err);
-        return NextResponse.json({})
+        console.error('執行查詢時發生錯誤:', err);
+        return NextResponse.json({ error: "服務器內部錯誤" }, { status: 500 })
     }
-    return NextResponse.json({})
 }

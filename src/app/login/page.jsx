@@ -1,84 +1,135 @@
 'use client';
-import React from 'react';
+
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useGoogleLogin } from '@react-oauth/google';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { GoogleOAuthProvider } from '@react-oauth/google';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const LoginPage = () => {
   const router = useRouter();
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-
-    const username = document.querySelector('#username').value;
-    const password = document.querySelector('#password').value;
+  const handleLogin = async (account, password) => {
+    setError('');
+    setLoading(true);
 
     try {
       const res = await fetch('/api/login', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ account, password }),
       });
-
-      if (!res.ok) {
-        throw new Error('Login failed.');
-      }
 
       const data = await res.json();
 
-      if (data.msg === 'success') {
-        router.push('/');
+      if (!res.ok) {
+        throw new Error(data.error || `登入失敗。狀態碼: ${res.status}`);
+      }
+
+      if (data.message === '登錄成功') {
+        // 使用 router.replace() 确保页面更新
+        // router.replace('/home');
+        window.location.href = '/home'
+      } else {
+        throw new Error(data.error || '登入失敗。請稍後再試。');
       }
     } catch (error) {
       console.error('Login error:', error);
-      // Stay on login page if there's an error
+      setError(error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const googleLogin = useGoogleLogin({
-    onSuccess: tokenResponse => {
-      const access_token = tokenResponse.access_token;
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    const account = event.target.account.value;
+    const password = event.target.password.value;
+    handleLogin(account, password);
+  };
 
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      const { access_token } = tokenResponse;
       if (access_token) {
-        console.log(access_token)
-        router.push("/")
+        try {
+          const res = await fetch('/api/google-login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ access_token }),
+          });
+
+          const data = await res.json();
+
+          if (!res.ok) {
+            throw new Error(data.message || 'Google 登入失敗');
+          }
+
+          if (data.success) {
+            // 使用 router.replace() 确保页面更新
+            // router.replace('/home');
+            window.location.href = '/home'
+          } else {
+            throw new Error(data.message || 'Google 登入失敗');
+          }
+        } catch (error) {
+          console.error('Google login error:', error);
+          setError(error.message);
+        }
       }
     },
-    onError: err => {
+    onError: (err) => {
       console.error('Google login error:', err);
-    }
+      setError('Google 登入失敗，請稍後再試。');
+    },
   });
 
   return (
-    <div className='flex justify-center items-center h-screen'>
-      <div className='mx-auto max-w-md p-6 bg-white shadow-md rounded-lg w-full'>
+    <div className='flex justify-center items-center min-h-screen bg-gray-100'>
+      <div className='mx-auto max-w-md p-8 bg-white shadow-md rounded-lg w-full'>
         <form onSubmit={handleSubmit}>
-          <div className='text-2xl mt-4'>登入</div>
-          <div className='grid gap-2 mt-4'>
-            <Label htmlFor='username'>Username</Label>
-            <Input id='username' type='text' className='w-full' placeholder='帳號' />
+          <h2 className='text-2xl font-bold mb-6 text-center'>登入</h2>
+          {error && (
+            <Alert variant='destructive' className='mb-4'>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          <div className='space-y-4'>
+            <div>
+              <Label htmlFor='account'>帳號</Label>
+              <Input id='account' name='account' type='text' placeholder='請輸入帳號' required />
+            </div>
+            <div>
+              <Label htmlFor='password'>密碼</Label>
+              <Input id='password' name='password' type='password' placeholder='請輸入密碼' required />
+            </div>
+            <Link href='/forgot-password' className='text-sm text-blue-600 hover:underline block text-right'>
+              忘記密碼？
+            </Link>
           </div>
-          <div className='grid gap-2 mt-4'>
-            <Label htmlFor='password'>Password</Label>
-            <Input id='password' type='password' className='w-full' placeholder='密碼' />
-            <Link href='#' className='ml-auto inline-block text-sm underline'>忘記密碼？</Link>
-          </div>
-          <Button type='submit' className='w-full'>登入</Button>
+          <Button type='submit' className='w-full mt-6' disabled={loading}>
+            {loading ? '登入中...' : '登入'}
+          </Button>
         </form>
-        <div className='mt-4 flex flex-col gap-2'>
-          <Button variant='outline' className='w-full' onClick={googleLogin}>
+        <div className='mt-6'>
+          <Button variant='outline' className='w-full' onClick={() => googleLogin()} disabled={loading}>
             使用 Google 登入
           </Button>
         </div>
-        <div className='mt-4 text-center text-sm'>
+        <div className='mt-6 text-center text-sm'>
           還沒有帳號？{' '}
-          <Link href='/signup' className='underline'>註冊</Link>
+          <Link href='/signup' className='text-blue-600 hover:underline'>
+            註冊
+          </Link>
         </div>
       </div>
     </div>
