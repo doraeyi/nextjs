@@ -36,7 +36,8 @@ const LoginPage = () => {
       if (data.message === '登錄成功') {
         // 使用 router.replace() 确保页面更新
         // router.replace('/home');
-        window.location.href = '/home'
+         window.location.href = '/home'
+        
       } else {
         throw new Error(data.error || '登入失敗。請稍後再試。');
       }

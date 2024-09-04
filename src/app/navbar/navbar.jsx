@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import'../../styles/navbar.css'
+
 
 const Navbar = () => {
   const [user, setUser] = React.useState(null);
@@ -48,8 +50,8 @@ const Navbar = () => {
   };
 
   return (
-    <nav className='bg-gray-800 p-4'>
-      <div className='container mx-auto flex justify-between items-center'>
+    <nav className='bg-gray-800'>
+      <div className='container nav'>
         <Link href='/' className='text-white text-lg font-bold'>
           Meowtrade
         </Link>
