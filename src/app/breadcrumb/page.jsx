@@ -12,7 +12,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 
-const breadcrumb = () => {
+const DynamicBreadcrumb = () => {
   const pathname = usePathname();
   const pathSegments = pathname.split('/').filter(segment => segment);
 
@@ -21,7 +21,6 @@ const breadcrumb = () => {
     'home': '首頁',
     'dedicated': '專屬用戶',
     'profile': '個人資料',
-    'questionbank':'題庫'
     // 添加其他需要的映射
   };
 
@@ -60,4 +59,4 @@ const breadcrumb = () => {
   );
 };
 
-export default breadcrumb;
+export default DynamicBreadcrumb;
