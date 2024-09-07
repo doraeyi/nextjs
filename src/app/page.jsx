@@ -4,18 +4,18 @@ import { signJwtAccessToken, verifyJwt } from '@/lib/jwt'
 
 import { redirect } from "next/navigation"
 
-const app = () => {
+const HomePage = () => {
   // const accessToken = cookies().get("token")?.value || ""
   // console.log("gg",!verifyJwt(accessToken))
   // if (!verifyJwt(accessToken)) {
   //   redirect("/login")
   // }
 
-  // return (
-  //   <div className="">
-  //     首頁
-  //   </div>
-  // );
+  return (
+    <div className="">
+      首頁
+    </div>
+  );
 }
 
-export default app
+export default HomePage

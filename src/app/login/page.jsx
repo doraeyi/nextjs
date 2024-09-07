@@ -95,7 +95,7 @@ const LoginPage = () => {
   });
 
   return (
-    <div className='flex justify-center items-center min-h-screen bg-gray-100'>
+    <div className='flex justify-center items-center min-h-screen'>
       <div className='mx-auto max-w-md p-8 bg-white shadow-md rounded-lg w-full'>
         <form onSubmit={handleSubmit}>
           <h2 className='text-2xl font-bold mb-6 text-center'>登入</h2>
