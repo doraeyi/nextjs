@@ -79,17 +79,17 @@ const ScheduleDialog = ({ isOpen, onClose, date, schedule, events }) => (
         <table className="min-w-full bg-white border border-gray-300">
           <thead>
             <tr className="bg-gray-100">
-              <th className="py-2 px-4 border-b text-center">時間</th>
-              <th className="py-2 px-4 border-b text-center">科目</th>
-              <th className="py-2 px-4 border-b text-center">教室</th>
+              <th className="py-1 px-2 border-b text-center">時間</th>
+              <th className="py-1 px-2 border-b text-center">科目</th>
+              <th className="py-1 px-2 border-b text-center">教室</th>
             </tr>
           </thead>
           <tbody>
             {schedule.map((item, index) => (
               <tr key={index} className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
-                <td className="py-2 px-4 border-b text-center">{item.time}</td>
-                <td className="py-2 px-4 border-b text-center">{item.subject}</td>
-                <td className="py-2 px-4 border-b text-center">{item.class}</td>
+                <td className="py-1 px-2 border-b text-center">{item.time}</td>
+                <td className="py-1 px-2 border-b text-center">{item.subject}</td>
+                <td className="py-1 px-2 border-b text-center">{item.class}</td>
               </tr>
             ))}
           </tbody>
@@ -102,15 +102,15 @@ const ScheduleDialog = ({ isOpen, onClose, date, schedule, events }) => (
         <table className="min-w-full bg-white border border-gray-300">
           <thead>
             <tr className="bg-gray-100">
-              <th className="py-2 px-4 border-b text-center">時間</th>
-              <th className="py-2 px-4 border-b text-center">描述</th>
+              <th className="py-1 px-2 border-b text-center">時間</th>
+              <th className="py-1 px-2 border-b text-center">描述</th>
             </tr>
           </thead>
           <tbody>
             {events.map((item, index) => (
               <tr key={index} className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
-                <td className="py-2 px-4 border-b text-center">{item.time}</td>
-                <td className="py-2 px-4 border-b text-center">{item.description}</td>
+                <td className="py-1 px-2 border-b text-center">{item.time}</td>
+                <td className="py-1 px-2 border-b text-center">{item.description}</td>
               </tr>
             ))}
           </tbody>
