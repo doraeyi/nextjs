@@ -184,7 +184,7 @@ const HomePage = () => {
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">課表與行程日曆</h1>
       <div className="text-lg mb-2">
-        今天是：{format(currentDate, "yyyy年MM月dd日 (EEEE)", { locale: zhTW })}
+        {format(currentDate, "yyyy年MM月dd日 (EEEE)", { locale: zhTW })}
       </div>
       <Calendar
         mode="single"
