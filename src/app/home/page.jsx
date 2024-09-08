@@ -2,7 +2,8 @@
 
 import * as React from "react"
 import { Calendar } from "@/components/ui/calendar"
-import { format, getDay, isValid } from "date-fns"
+import { format, getDay, isValid, startOfDay, isSameDay } from "date-fns"
+import { zhTW } from 'date-fns/locale'
 import {
   Dialog,
   DialogContent,
@@ -124,48 +125,83 @@ const ScheduleDialog = ({ isOpen, onClose, date, schedule, events }) => (
 )
 
 const HomePage = () => {
-const [selectedDate, setSelectedDate] = React.useState(new Date())
-const [isDialogOpen, setIsDialogOpen] = React.useState(false)
+  const [currentDate, setCurrentDate] = React.useState(() => {
+    const now = startOfDay(new Date())
+    console.log("Initial currentDate:", now)
+    return now
+  })
+  const [selectedDate, setSelectedDate] = React.useState(() => {
+    const now = startOfDay(new Date())
+    console.log("Initial selectedDate:", now)
+    return now
+  })
+  const [isDialogOpen, setIsDialogOpen] = React.useState(false)
 
-const handleDateSelect = (date) => {
-  if (date && isValid(date)) {
-    setSelectedDate(date)
-    setIsDialogOpen(true)
-  } else {
-    console.error('Invalid date selected')
+  React.useEffect(() => {
+    const updateDate = () => {
+      const now = startOfDay(new Date())
+      console.log("Checking date update. Current:", currentDate, "New:", now)
+      if (!isSameDay(now, currentDate)) {
+        console.log("Updating date to:", now)
+        setCurrentDate(now)
+        setSelectedDate(now)
+      }
+    }
+
+    updateDate() // 初始更新
+
+    // 每分鐘檢查一次日期
+    const intervalId = setInterval(updateDate, 60000)
+
+    return () => clearInterval(intervalId)
+  }, [currentDate])
+
+  const handleDateSelect = (date) => {
+    if (date && isValid(date)) {
+      console.log("Selected date:", date)
+      setSelectedDate(date)
+      setIsDialogOpen(true)
+    } else {
+      console.error('Invalid date selected')
+    }
   }
-}
 
-const getScheduleForDate = React.useMemo(() => (date) => {
-  if (!date || !isValid(date)) return []
-  const dayOfWeek = getDay(date)
-  return weeklySchedule[dayOfWeek] || []
-}, [])
+  const getScheduleForDate = React.useMemo(() => (date) => {
+    if (!date || !isValid(date)) return []
+    const dayOfWeek = getDay(date)
+    return weeklySchedule[dayOfWeek] || []
+  }, [])
 
-const getEventsForDate = React.useMemo(() => (date) => {
-  if (!date || !isValid(date)) return []
-  const formattedDate = format(date, "yyyy-MM-dd")
-  return dailyEvents[formattedDate] || []
-}, [])
+  const getEventsForDate = React.useMemo(() => (date) => {
+    if (!date || !isValid(date)) return []
+    const formattedDate = format(date, "yyyy-MM-dd")
+    return dailyEvents[formattedDate] || []
+  }, [])
 
-return (
-  <div className="p-4">
-    <h1 className="text-2xl font-bold mb-4">課表與行程日曆</h1>
-    <Calendar
-      mode="single"
-      selected={selectedDate}
-      onSelect={handleDateSelect}
-      className="rounded-md border"
-    />
-    <ScheduleDialog
-      isOpen={isDialogOpen}
-      onClose={() => setIsDialogOpen(false)}
-      date={selectedDate}
-      schedule={getScheduleForDate(selectedDate)}
-      events={getEventsForDate(selectedDate)}
-    />
-  </div>
-)
+  console.log("Rendering with currentDate:", currentDate)
+
+  return (
+    <div className="p-4">
+      <h1 className="text-2xl font-bold mb-4">課表與行程日曆</h1>
+      <div className="text-lg mb-2">
+        今天是：{format(currentDate, "yyyy年MM月dd日 (EEEE)", { locale: zhTW })}
+      </div>
+      <Calendar
+        mode="single"
+        selected={selectedDate}
+        onSelect={handleDateSelect}
+        className="rounded-md border"
+        today={currentDate}
+      />
+      <ScheduleDialog
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        date={selectedDate}
+        schedule={getScheduleForDate(selectedDate)}
+        events={getEventsForDate(selectedDate)}
+      />
+    </div>
+  )
 }
 
 export default HomePage
