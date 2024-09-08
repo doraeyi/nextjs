@@ -21,6 +21,7 @@ const DynamicBreadcrumb = () => {
     'home': '首頁',
     'dedicated': '專屬用戶',
     'profile': '個人資料',
+    'questionbank':'題庫',
     // 添加其他需要的映射
   };
 
