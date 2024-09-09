@@ -125,24 +125,14 @@ const ScheduleDialog = ({ isOpen, onClose, date, schedule, events }) => (
 )
 
 const HomePage = () => {
-  const [currentDate, setCurrentDate] = React.useState(() => {
-    const now = startOfDay(new Date())
-    console.log("Initial currentDate:", now)
-    return now
-  })
-  const [selectedDate, setSelectedDate] = React.useState(() => {
-    const now = startOfDay(new Date())
-    console.log("Initial selectedDate:", now)
-    return now
-  })
+  const [currentDate, setCurrentDate] = React.useState(() => new Date())
+  const [selectedDate, setSelectedDate] = React.useState(() => new Date())
   const [isDialogOpen, setIsDialogOpen] = React.useState(false)
 
   React.useEffect(() => {
     const updateDate = () => {
-      const now = startOfDay(new Date())
-      console.log("Checking date update. Current:", currentDate, "New:", now)
+      const now = new Date()
       if (!isSameDay(now, currentDate)) {
-        console.log("Updating date to:", now)
         setCurrentDate(now)
         setSelectedDate(now)
       }
@@ -158,7 +148,6 @@ const HomePage = () => {
 
   const handleDateSelect = (date) => {
     if (date && isValid(date)) {
-      console.log("Selected date:", date)
       setSelectedDate(date)
       setIsDialogOpen(true)
     } else {
@@ -166,19 +155,17 @@ const HomePage = () => {
     }
   }
 
-  const getScheduleForDate = React.useMemo(() => (date) => {
+  const getScheduleForDate = React.useCallback((date) => {
     if (!date || !isValid(date)) return []
     const dayOfWeek = getDay(date)
     return weeklySchedule[dayOfWeek] || []
   }, [])
 
-  const getEventsForDate = React.useMemo(() => (date) => {
+  const getEventsForDate = React.useCallback((date) => {
     if (!date || !isValid(date)) return []
     const formattedDate = format(date, "yyyy-MM-dd")
     return dailyEvents[formattedDate] || []
   }, [])
-
-  console.log("Rendering with currentDate:", currentDate)
 
   return (
     <div className="p-4">
@@ -190,7 +177,6 @@ const HomePage = () => {
         mode="single"
         selected={selectedDate}
         onSelect={handleDateSelect}
-        className="rounded-md border"
         today={currentDate}
       />
       <ScheduleDialog
