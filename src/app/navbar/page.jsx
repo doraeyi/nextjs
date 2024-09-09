@@ -76,7 +76,7 @@ const Navbar = () => {
   return (
     <nav className='bg-gray-800'>
       <div className='container nav'>
-        <Link href='/home' className='text-white text-lg font-bold'>
+        <Link href='/' className='text-white text-lg font-bold'>
           Meowtrade
         </Link>
         <div className='space-x-2 flex items-center'>
