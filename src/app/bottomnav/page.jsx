@@ -6,7 +6,7 @@ import { Sun, Moon, Home, Info, Mail, Loader } from 'lucide-react';
 import Link from 'next/link';
 
 const NavItem = ({ href, Icon, text }) => (
-  <Link href={href} className="flex flex-col items-center text-gray-700 dark:text-gray-200 hover:text-blue-500 dark:hover:text-blue-400">
+  <Link href={href} className="flex flex-col items-center text-gray-700 dark:text-white hover:text-blue-500 dark:hover:text-blue-400">
     <Icon className="h-6 w-6" />
     <span className="text-xs mt-1">{text}</span>
   </Link>
@@ -24,7 +24,7 @@ const BottomNav = () => {
     return (
       <nav className="fixed bottom-4 left-4 right-4 bg-white dark:bg-gray-800 shadow-lg rounded-full">
         <div className="flex justify-center items-center h-16">
-          <Loader className="animate-spin h-5 w-5 text-gray-700 dark:text-gray-200" />
+          <Loader className="animate-spin h-5 w-5 text-gray-700 dark:text-white" />
         </div>
       </nav>
     );
@@ -50,7 +50,7 @@ const BottomNav = () => {
               {resolvedTheme === 'dark' ? (
                 <>
                   <Sun className="h-6 w-6 text-yellow-500" />
-                  <span className="text-xs mt-1 text-gray-200">亮色</span>
+                  <span className="text-xs mt-1 text-white">亮色</span>
                 </>
               ) : (
                 <>
