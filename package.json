@@ -30,6 +30,7 @@
     "lucide-react": "^0.414.0",
     "mysql2": "^3.10.3",
     "next": "14.2.5",
+    "next-themes": "^0.3.0",
     "playfab-sdk": "^2.157.240719",
     "react": "^18",
     "react-cookie": "^7.2.0",

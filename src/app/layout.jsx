@@ -1,9 +1,10 @@
 import { Inter } from "next/font/google";
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import { ThemeProvider } from 'next-themes';
 import Navbar from './navbar/page';
 import DynamicBreadcrumb from './breadcrumb/page';
+import BottomNav from './bottomnav/page'; // 確保路徑正確
 import "./globals.css";
-
 const inter = Inter({ subsets: ["latin"] });
 
 const APP_NAME = "Meowtrade";
@@ -46,7 +47,6 @@ export const metadata = {
     description: APP_DESCRIPTION,
   },
 };
-
 export const viewport = {
   themeColor: "#FFFFFF",
 };
@@ -55,13 +55,16 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={inter.className}>
-        <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}>
-          <Navbar />
-          <main className="container mx-auto mt-4">
-            <DynamicBreadcrumb />
-            {children}
-          </main>
-        </GoogleOAuthProvider>
+        <ThemeProvider attribute="class">
+          <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}>
+            <Navbar />
+            <main className="container mx-auto mt-4 pb-16"> {/* 添加 pb-16 來為底部導航騰出空間 */}
+              <DynamicBreadcrumb />
+              {children}
+            </main>
+            <BottomNav />
+          </GoogleOAuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
