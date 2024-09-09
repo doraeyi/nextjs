@@ -54,8 +54,9 @@ const weeklySchedule = {
     { time: "09:55-11:40", subject: "英文", class: "C501" },
     { time: "14:40-16:25", subject: "數學", class: "C501" },
   ],
+  
 }
- 
+
 // 模擬的特定日期行程數據
 const dailyEvents = {
   "2024-09-08": [
@@ -69,58 +70,58 @@ const dailyEvents = {
 
 const ScheduleDialog = ({ isOpen, onClose, date, schedule, events }) => (
   <Dialog open={isOpen} onOpenChange={onClose}>
-    <DialogContent className="max-w-4xl bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
-      <DialogHeader>
-        <DialogTitle>{format(date, "yyyy年MM月dd日")} ({['日', '一', '二', '三', '四', '五', '六'][getDay(date)]}) </DialogTitle>
-      </DialogHeader>
-      <div className="mt-4">
-        <h3 className="font-bold text-lg mb-2">課表：</h3>
-        {schedule.length > 0 ? (
-          <table className="min-w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600">
-            <thead>
-              <tr className="bg-gray-100 dark:bg-gray-600">
-                <th className="py-1 px-2 border-b border-gray-300 dark:border-gray-500 text-center">時間</th>
-                <th className="py-1 px-2 border-b border-gray-300 dark:border-gray-500 text-center">科目</th>
-                <th className="py-1 px-2 border-b border-gray-300 dark:border-gray-500 text-center">教室</th>
+  <DialogContent className="max-w-4xl">
+    <DialogHeader>
+      <DialogTitle>{format(date, "yyyy年MM月dd日")} ({['日', '一', '二', '三', '四', '五', '六'][getDay(date)]}) 的安排</DialogTitle>
+    </DialogHeader>
+    <div className="mt-4">
+      <h3 className="font-bold text-lg mb-2">課表：</h3>
+      {schedule.length > 0 ? (
+        <table className="min-w-full bg-white border border-gray-300">
+          <thead>
+            <tr className="bg-gray-100">
+              <th className="py-1 px-2 border-b text-center">時間</th>
+              <th className="py-1 px-2 border-b text-center">科目</th>
+              <th className="py-1 px-2 border-b text-center">教室</th>
+            </tr>
+          </thead>
+          <tbody>
+            {schedule.map((item, index) => (
+              <tr key={index} className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+                <td className="py-1 px-2 border-b text-center">{item.time}</td>
+                <td className="py-1 px-2 border-b text-center">{item.subject}</td>
+                <td className="py-1 px-2 border-b text-center">{item.class}</td>
               </tr>
-            </thead>
-            <tbody>
-              {schedule.map((item, index) => (
-                <tr key={index} className={index % 2 === 0 ? 'bg-gray-50 dark:bg-gray-800' : 'bg-white dark:bg-gray-700'}>
-                  <td className="py-1 px-2 border-b border-gray-300 dark:border-gray-600 text-center">{item.time}</td>
-                  <td className="py-1 px-2 border-b border-gray-300 dark:border-gray-600 text-center">{item.subject}</td>
-                  <td className="py-1 px-2 border-b border-gray-300 dark:border-gray-600 text-center">{item.class}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <p>今天沒有課程安排。</p>
-        )}
-        <h3 className="font-bold text-lg mt-4 mb-2">行程：</h3>
-        {events.length > 0 ? (
-          <table className="min-w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600">
-            <thead>
-              <tr className="bg-gray-100 dark:bg-gray-600">
-                <th className="py-1 px-2 border-b border-gray-300 dark:border-gray-500 text-center">時間</th>
-                <th className="py-1 px-2 border-b border-gray-300 dark:border-gray-500 text-center">描述</th>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        <p>今天沒有課程安排。</p>
+      )}
+      <h3 className="font-bold text-lg mt-4 mb-2">行程：</h3>
+      {events.length > 0 ? (
+        <table className="min-w-full bg-white border border-gray-300">
+          <thead>
+            <tr className="bg-gray-100">
+              <th className="py-1 px-2 border-b text-center">時間</th>
+              <th className="py-1 px-2 border-b text-center">描述</th>
+            </tr>
+          </thead>
+          <tbody>
+            {events.map((item, index) => (
+              <tr key={index} className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+                <td className="py-1 px-2 border-b text-center">{item.time}</td>
+                <td className="py-1 px-2 border-b text-center">{item.description}</td>
               </tr>
-            </thead>
-            <tbody>
-              {events.map((item, index) => (
-                <tr key={index} className={index % 2 === 0 ? 'bg-gray-50 dark:bg-gray-800' : 'bg-white dark:bg-gray-700'}>
-                  <td className="py-1 px-2 border-b border-gray-300 dark:border-gray-600 text-center">{item.time}</td>
-                  <td className="py-1 px-2 border-b border-gray-300 dark:border-gray-600 text-center">{item.description}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <p>今天沒有特別的行程安排。</p>
-        )}
-      </div>
-    </DialogContent>
-  </Dialog>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        <p>今天沒有特別的行程安排。</p>
+      )}
+    </div>
+  </DialogContent>
+</Dialog>
 )
 
 const HomePage = () => {
@@ -167,7 +168,7 @@ const HomePage = () => {
   }, [])
 
   return (
-    <div className="p-4 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+    <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">課表與行程日曆</h1>
       <div className="text-lg mb-2">
         {format(currentDate, "yyyy年MM月dd日 (EEEE)", { locale: zhTW })}
@@ -177,7 +178,6 @@ const HomePage = () => {
         selected={selectedDate}
         onSelect={handleDateSelect}
         today={currentDate}
-        className="rounded-md border dark:border-gray-700"
       />
       <ScheduleDialog
         isOpen={isDialogOpen}
