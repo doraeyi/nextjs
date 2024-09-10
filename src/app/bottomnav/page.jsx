@@ -69,7 +69,7 @@ const BottomNav = () => {
         >
           <Plus className="h-8 w-8 text-white" />
         </button>
-      </div>
+      </div> 
     </nav>
   );
 };

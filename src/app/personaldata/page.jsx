@@ -158,4 +158,4 @@ const PersonalInfoCard = () => {
   );
 };
 
-export default PersonalInfoCard;
+export default PersonalInfoCard; 

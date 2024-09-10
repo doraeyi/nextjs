@@ -8,7 +8,7 @@
       "type": "image/png"
     },
     {
-      "src": "/logo.png",
+      "src": "/logo.png", 
       "sizes": "250x250",
       "type": "image/png"
     },
