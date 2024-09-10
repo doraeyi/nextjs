@@ -64,6 +64,9 @@ const Navbar = () => {
       case 'dedicated':
         router.push('/dedicated');
         break;
+        case 'personaldata':
+        router.push('/personaldata');
+        break;
       default:
         break;
     }

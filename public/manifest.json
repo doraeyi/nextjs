@@ -4,22 +4,22 @@
   "icons": [
     {
       "src": "/logo.png",
-      "sizes": "192x192",
+      "sizes": "250x250",
       "type": "image/png"
     },
     {
       "src": "/logo.png",
-      "sizes": "192x192",
+      "sizes": "250x250",
       "type": "image/png"
     },
     {
       "src": "/logo.png",
-      "sizes": "192x192",
+      "sizes": "250x250",
       "type": "image/png"
     }
   ],
   "theme_color": "#FFFFFF",
-  "background_color": "transparent",
+  "background_color": "#FFFFF",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait"

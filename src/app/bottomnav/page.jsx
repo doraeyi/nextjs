@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
-import { Sun, Moon, Home, Info, Mail, Loader } from 'lucide-react';
+import { Sun, Moon, Home, Info, Mail, Loader, Plus } from 'lucide-react';
 import Link from 'next/link';
 
 const NavItem = ({ href, Icon, text }) => (
-  <Link href={href} className="flex flex-col items-center text-gray-700 dark:text-white hover:text-blue-500 dark:hover:text-blue-400">
+  <Link href={href} className="flex flex-col items-center text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400">
     <Icon className="h-6 w-6" />
     <span className="text-xs mt-1">{text}</span>
   </Link>
@@ -22,9 +22,9 @@ const BottomNav = () => {
 
   if (!mounted) {
     return (
-      <nav className="fixed bottom-4 left-4 right-4 bg-white dark:bg-gray-800 shadow-lg rounded-full">
+      <nav className="fixed bottom-4 left-4 right-4 bg-white dark:bg-gray-900 shadow-lg rounded-full">
         <div className="flex justify-center items-center h-16">
-          <Loader className="animate-spin h-5 w-5 text-gray-700 dark:text-white" />
+          <Loader className="animate-spin h-5 w-5 text-gray-700 dark:text-gray-300" />
         </div>
       </nav>
     );
@@ -35,12 +35,13 @@ const BottomNav = () => {
   };
 
   return (
-    <nav className="fixed bottom-4 left-4 right-4 bg-white dark:bg-gray-800 shadow-lg rounded-full">
-      <div className="max-w-screen-xl mx-auto px-4">
+    <nav className="fixed bottom-4 left-4 right-4 bg-white dark:bg-gray-900 shadow-lg rounded-full">
+      <div className="max-w-screen-xl mx-auto px-4 relative">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center justify-around w-full">
             <NavItem href="/" Icon={Home} text="首頁" />
             <NavItem href="/about" Icon={Info} text="關於" />
+            <div className="w-16" /> {/* Placeholder for center button */}
             <NavItem href="/contact" Icon={Mail} text="聯繫" />
             <button
               onClick={toggleTheme}
@@ -50,7 +51,7 @@ const BottomNav = () => {
               {resolvedTheme === 'dark' ? (
                 <>
                   <Sun className="h-6 w-6 text-yellow-500" />
-                  <span className="text-xs mt-1 text-white">亮色</span>
+                  <span className="text-xs mt-1 text-gray-300">亮色</span>
                 </>
               ) : (
                 <>
@@ -61,6 +62,13 @@ const BottomNav = () => {
             </button>
           </div>
         </div>
+        {/* Center button */}
+        <button 
+          className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 w-20 h-20 bg-blue-900 rounded-full flex items-center justify-center shadow-lg hover:bg-blue-600 transition-colors"
+          onClick={() => console.log('Center button clicked')}
+        >
+          <Plus className="h-8 w-8 text-white" />
+        </button>
       </div>
     </nav>
   );
