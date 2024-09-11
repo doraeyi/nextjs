@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
-import { Sun, Moon, Home, Info, Mail, Loader, Plus } from 'lucide-react';
+import { Sun, Moon, Home, Info, Settings, Loader, Plus } from 'lucide-react';
 import Link from 'next/link';
 
 const NavItem = ({ href, Icon, text }) => (
@@ -42,7 +42,7 @@ const BottomNav = () => {
             <NavItem href="/" Icon={Home} text="首頁" />
             <NavItem href="/about" Icon={Info} text="關於" />
             <div className="w-16" /> {/* Placeholder for center button */}
-            <NavItem href="/contact" Icon={Mail} text="聯繫" />
+            <NavItem href="/settings" Icon={Settings} text="設定" />
             <button
               onClick={toggleTheme}
               className="flex flex-col items-center p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
@@ -69,7 +69,7 @@ const BottomNav = () => {
         >
           <Plus className="h-8 w-8 text-white" />
         </button>
-      </div> 
+      </div>
     </nav>
   );
 };
