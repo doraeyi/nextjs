@@ -1,9 +1,9 @@
-'use client'
-
 import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { User, AlertCircle } from 'lucide-react';
+import { User, AlertCircle, Edit2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 const PersonalInfoCard = () => {
   const [user, setUser] = useState(null);
@@ -11,6 +11,9 @@ const PersonalInfoCard = () => {
   const [error, setError] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState(null);
+  const [editingUsername, setEditingUsername] = useState(false);
+  const [newUsername, setNewUsername] = useState('');
+  const [updateUsernameError, setUpdateUsernameError] = useState(null);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -30,6 +33,7 @@ const PersonalInfoCard = () => {
       }
       const data = await res.json();
       setUser(data);
+      setNewUsername(data.username || '');
     } catch (error) {
       console.error('獲取用戶失敗:', error);
       setError('加載用戶數據失敗。請重試。');
@@ -81,6 +85,36 @@ const PersonalInfoCard = () => {
       setUploadError(`上傳失敗: ${error.message}`);
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleUsernameUpdate = async () => {
+    if (!newUsername.trim()) {
+      setUpdateUsernameError('用戶名不能為空');
+      return;
+    }
+
+    setUpdateUsernameError(null);
+    try {
+      const response = await fetch('/api/update-username', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username: newUsername }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || '更新用戶名失敗');
+      }
+
+      setUser(prevUser => ({...prevUser, username: newUsername}));
+      setEditingUsername(false);
+    } catch (error) {
+      console.error('更新用戶名時出錯:', error);
+      setUpdateUsernameError(`更新失敗: ${error.message}`);
     }
   };
 
@@ -137,7 +171,33 @@ const PersonalInfoCard = () => {
             </div>
           </div>
           <div className="text-center mt-20">
-            <h2 className="text-2xl font-semibold text-gray-800">{user.username || '未知用戶'}</h2>
+            {editingUsername ? (
+              <div className="flex items-center justify-center space-x-2">
+                <Input
+                  type="text"
+                  value={newUsername}
+                  onChange={(e) => setNewUsername(e.target.value)}
+                  className="w-48"
+                />
+                <Button onClick={handleUsernameUpdate}>保存</Button>
+                <Button variant="outline" onClick={() => setEditingUsername(false)}>取消</Button>
+              </div>
+            ) : (
+              <h2 className="text-2xl font-semibold text-gray-800 flex items-center justify-center">
+                {user.username || '未知用戶'}
+                <Edit2 
+                  className="ml-2 h-5 w-5 text-gray-500 cursor-pointer" 
+                  onClick={() => setEditingUsername(true)}
+                />
+              </h2>
+            )}
+            {updateUsernameError && (
+              <Alert variant="destructive" className="mt-2">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>更新錯誤</AlertTitle>
+                <AlertDescription>{updateUsernameError}</AlertDescription>
+              </Alert>
+            )}
             <p className="text-gray-600 mt-2">
               性別: {user.gender || '未設置'}<br />
               帳號: {user.account || '未設置'}<br />
@@ -158,4 +218,4 @@ const PersonalInfoCard = () => {
   );
 };
 
-export default PersonalInfoCard; 
+export default PersonalInfoCard;
