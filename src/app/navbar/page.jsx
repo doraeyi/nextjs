@@ -96,7 +96,7 @@ const Navbar = () => {
                   <SelectContent className="bg-gray-700 border-none">
                     <SelectGroup>
                       <SelectLabel className="text-gray-300">個人資料</SelectLabel>
-                      <SelectItem value="view" className="text-white hover:bg-gray-600">個人資料</SelectItem>
+                      <SelectItem value="personaldata" className="text-white hover:bg-gray-600">個人資料</SelectItem>
                       <SelectItem value="edit" className="text-white hover:bg-gray-600">編輯個人資料</SelectItem>
                       <SelectItem value="settings" className="text-white hover:bg-gray-600">帳戶設置</SelectItem>
                       {isDedicatedUser() && (
