@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { FiUpload, FiLoader } from 'react-icons/fi';
+
 
 const updateUserPic = async (url) => {
     try {
@@ -68,23 +70,32 @@ const ImageUrlUpload = () => {
 
   return (
     <div className="space-y-4">
-      <Input
-        type="text"
-        placeholder="輸入圖片URL"
-        value={imageUrl}
-        onChange={(e) => setImageUrl(e.target.value)}
-      />
-      <Button onClick={handleUpload} disabled={isUploading || !imageUrl}>
-        {isUploading ? '上傳中...' : '上傳'}
-      </Button>
-      
-      {alert && (
-        <Alert variant={alert.type === 'success' ? 'default' : 'destructive'}>
-          <AlertTitle>{alert.title}</AlertTitle>
-          <AlertDescription>{alert.description}</AlertDescription>
-        </Alert>
+    <Input
+      type="text"
+      placeholder="輸入圖片URL"
+      value={imageUrl}
+      onChange={(e) => setImageUrl(e.target.value)}
+    />
+    <Button
+      onClick={handleUpload}
+      disabled={isUploading || !imageUrl}
+      className="flex items-center space-x-2"
+    >
+      {isUploading ? (
+        <FiLoader className="h-4 w-4 animate-spin mr-2" />
+      ) : (
+        <FiUpload className="h-4 w-4 mr-2" />
       )}
-    </div>
+      <span>{isUploading ? '上傳中...' : '上傳'}</span>
+    </Button>
+    
+    {alert && (
+      <Alert variant={alert.type === 'success' ? 'default' : 'destructive'}>
+        <AlertTitle>{alert.title}</AlertTitle>
+        <AlertDescription>{alert.description}</AlertDescription>
+      </Alert>
+    )}
+  </div>
   );
 };
 

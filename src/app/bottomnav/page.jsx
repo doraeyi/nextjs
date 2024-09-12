@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
-import { Sun, Moon, Home, Info, Settings, Loader, Plus } from 'lucide-react';
+import { Sun, Moon, Home, Info, Settings, Loader } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const NavItem = ({ href, Icon, text }) => (
   <Link href={href} className="flex flex-col items-center text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400">
@@ -15,6 +16,7 @@ const NavItem = ({ href, Icon, text }) => (
 const BottomNav = () => {
   const [mounted, setMounted] = useState(false);
   const { theme, setTheme, resolvedTheme } = useTheme();
+  const [imageToggle, setImageToggle] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -32,6 +34,10 @@ const BottomNav = () => {
 
   const toggleTheme = () => {
     setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
+  };
+
+  const handleImageToggle = () => {
+    setImageToggle(!imageToggle);
   };
 
   return (
@@ -62,12 +68,18 @@ const BottomNav = () => {
             </button>
           </div>
         </div>
-        {/* Center button */}
+        {/* Center button with toggle image */}
         <button 
-          className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 w-20 h-20 bg-blue-900 rounded-full flex items-center justify-center shadow-lg hover:bg-blue-600 transition-colors"
-          onClick={() => console.log('Center button clicked')}
+          className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 w-20 h-20 bg-blue-900 rounded-full flex items-center justify-center shadow-lg hover:bg-blue-600 transition-colors overflow-hidden"
+          onClick={handleImageToggle}
         >
-          <Plus className="h-8 w-8 text-white" />
+          <Image
+            src={imageToggle ? "/cat2.png" : "/cat1.png"}
+            alt="Toggle cat image"
+            width={80}
+            height={80}
+            className="object-cover"
+          />
         </button>
       </div>
     </nav>
