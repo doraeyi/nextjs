@@ -15,44 +15,22 @@ export async function GET(req) {
 
   console.log('Token found:', token.value);
 
-  let connection;
   try {
     const decoded = verifyJwt(token.value);
-    console.log('Decoded token result:', decoded);
+    console.log('Decoded token:', decoded);
 
     if (!decoded || !decoded.account) {
       console.log('Invalid token or missing account');
       return NextResponse.json({ error: "無效的 token" }, { status: 401 });
     }
 
-    console.log('Decoded token:', decoded);
-
-    connection = await connectToDatabase();
-    const [results] = await connection.execute(
-      'SELECT username, email FROM user WHERE username = ?',
-      [decoded.account]
-    );
-
-    console.log('Database query results:', results);
-
-    if (results.length === 0) {
-      console.log('User not found in database');
-      return NextResponse.json({ error: "用戶不存在" }, { status: 404 });
-    }
-
-    const user = results[0];
+    // 暫時返回模擬的用戶數據
+    const user = { username: decoded.account, email: `${decoded.account}@example.com` };
     console.log('Returning user data:', user);
     return NextResponse.json(user);
+
   } catch (error) {
-    console.error('Error fetching user data:', error);
+    console.error('Error processing request:', error);
     return NextResponse.json({ error: "服務器錯誤" }, { status: 500 });
-  } finally {
-    if (connection) {
-      try {
-        await connection.end();
-      } catch (error) {
-        console.error('Error closing database connection:', error);
-      }
-    }
   }
 }
