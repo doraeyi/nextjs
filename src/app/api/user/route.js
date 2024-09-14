@@ -24,11 +24,21 @@ export async function GET(req) {
       return NextResponse.json({ error: "無效的 token" }, { status: 401 });
     }
 
-    // 暫時返回模擬的用戶數據
-    const user = { username: decoded.account, email: `${decoded.account}@example.com` };
+    const connection = await connectToDatabase();
+    const [rows] = await connection.execute(
+      'SELECT username, account, pic FROM user WHERE account = ?',
+      [decoded.account]
+    );
+    connection.end();
+
+    if (rows.length === 0) {
+      console.log('User not found');
+      return NextResponse.json({ error: "用戶不存在" }, { status: 404 });
+    }
+
+    const user = rows[0];
     console.log('Returning user data:', user);
     return NextResponse.json(user);
-
   } catch (error) {
     console.error('Error processing request:', error);
     return NextResponse.json({ error: "服務器錯誤" }, { status: 500 });

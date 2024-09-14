@@ -34,10 +34,7 @@ const LoginPage = () => {
       }
 
       if (data.message === '登錄成功') {
-        // 使用 router.replace() 确保页面更新
-        // router.replace('/home');
-         window.location.href = '/home'
-        
+        window.location.href = '/home';
       } else {
         throw new Error(data.error || '登入失敗。請稍後再試。');
       }
@@ -76,9 +73,7 @@ const LoginPage = () => {
           }
 
           if (data.success) {
-            // 使用 router.replace() 确保页面更新
-            // router.replace('/home');
-            window.location.href = '/home'
+            window.location.href = '/home';
           } else {
             throw new Error(data.message || 'Google 登入失敗');
           }
@@ -95,10 +90,10 @@ const LoginPage = () => {
   });
 
   return (
-    <div className='flex justify-center items-center min-h-screen'>
-      <div className='mx-auto max-w-md p-8 bg-white shadow-md rounded-lg w-full'>
+    <div className='flex justify-center items-center min-h-screen bg-gray-100 dark:bg-gray-900'>
+      <div className='mx-auto max-w-md p-8 bg-white dark:bg-gray-800 shadow-md rounded-lg w-full'>
         <form onSubmit={handleSubmit}>
-          <h2 className='text-2xl font-bold mb-6 text-center'>登入</h2>
+          <h2 className='text-2xl font-bold mb-6 text-center text-gray-900 dark:text-white'>登入</h2>
           {error && (
             <Alert variant='destructive' className='mb-4'>
               <AlertDescription>{error}</AlertDescription>
@@ -106,29 +101,52 @@ const LoginPage = () => {
           )}
           <div className='space-y-4'>
             <div>
-              <Label htmlFor='account'>帳號</Label>
-              <Input id='account' name='account' type='text' placeholder='請輸入帳號' required />
+              <Label htmlFor='account' className="text-gray-700 dark:text-gray-300">帳號</Label>
+              <Input 
+                id='account' 
+                name='account' 
+                type='text' 
+                placeholder='請輸入帳號' 
+                required 
+                className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+              />
             </div>
             <div>
-              <Label htmlFor='password'>密碼</Label>
-              <Input id='password' name='password' type='password' placeholder='請輸入密碼' required />
+              <Label htmlFor='password' className="text-gray-700 dark:text-gray-300">密碼</Label>
+              <Input 
+                id='password' 
+                name='password' 
+                type='password' 
+                placeholder='請輸入密碼' 
+                required 
+                className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+              />
             </div>
-            <Link href='/forgot-password' className='text-sm text-blue-600 hover:underline block text-right'>
+            <Link href='/forgot-password' className='text-sm text-blue-600 dark:text-blue-400 hover:underline block text-right'>
               忘記密碼？
             </Link>
           </div>
-          <Button type='submit' className='w-full mt-6' disabled={loading}>
+          <Button 
+            type='submit' 
+            className='w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600' 
+            disabled={loading}
+          >
             {loading ? '登入中...' : '登入'}
           </Button>
         </form>
         <div className='mt-6'>
-          <Button variant='outline' className='w-full' onClick={() => googleLogin()} disabled={loading}>
+          <Button 
+            variant='outline' 
+            className='w-full border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' 
+            onClick={() => googleLogin()} 
+            disabled={loading}
+          >
             使用 Google 登入
           </Button>
         </div>
-        <div className='mt-6 text-center text-sm'>
+        <div className='mt-6 text-center text-sm text-gray-600 dark:text-gray-400'>
           還沒有帳號？{' '}
-          <Link href='/signup' className='text-blue-600 hover:underline'>
+          <Link href='/signup' className='text-blue-600 dark:text-blue-400 hover:underline'>
             註冊
           </Link>
         </div>

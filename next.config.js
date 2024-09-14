@@ -6,7 +6,7 @@ const withPWA = require("@ducanh2912/next-pwa").default({
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: ['ibb.co', 'i.ibb.co'],
+    domains: ['drive.usercontent.google.com'],
   },
   // 這裡可以添加其他 Next.js 配置
 };
