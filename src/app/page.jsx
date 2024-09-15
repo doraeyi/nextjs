@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
@@ -172,13 +172,13 @@ function CalendarScheduleEventManager() {
       />
 
       <Dialog open={showPopup} onOpenChange={setShowPopup}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[350px] h-[70vh] overflow-auto">
           <DialogHeader>
             <DialogTitle>{date && format(date, 'yyyy年MM月dd日 EEEE', { locale: zhTW })}</DialogTitle>
           </DialogHeader>
           <div className="mt-4">
             <h3 className="text-lg font-semibold mb-2">課程</h3>
-            <div className="max-h-[300px] overflow-y-auto">
+            <div className="max-h-[200px] overflow-y-auto">
               {schedules.length > 0 ? (
                 schedules.map((schedule) => (
                   <div key={schedule.id} className="mb-2 p-2 border dark:border-gray-600 rounded">
@@ -202,7 +202,7 @@ function CalendarScheduleEventManager() {
           </div>
           <div className="mt-4">
             <h3 className="text-lg font-semibold mb-2">行程</h3>
-            <div className="max-h-[300px] overflow-y-auto">
+            <div className="max-h-[200px] overflow-y-auto">
             {events.length > 0 ? (
               events.map((event) => (
                 <div key={event.id} className="mb-2 p-2 border dark:border-gray-600 rounded">
@@ -225,10 +225,10 @@ function CalendarScheduleEventManager() {
             </div>
           </div>
           <div className="flex space-x-2 mt-4">
-            <Button onClick={() => { setIsAddingItem(true); setItemType('schedule'); setIsEditingItem(false); setCurrentItem(null); }}>
+            <Button onClick={() => { setIsAddingItem(true); setItemType('schedule'); setIsEditingItem(false); setCurrentItem(null); }} className="text-sm">
               <Plus className="mr-2 h-4 w-4" /> 添加課程
             </Button>
-            <Button onClick={() => { setIsAddingItem(true); setItemType('event'); setIsEditingItem(false); setCurrentItem(null); }}>
+            <Button onClick={() => { setIsAddingItem(true); setItemType('event'); setIsEditingItem(false); setCurrentItem(null); }} className="text-sm">
               <Plus className="mr-2 h-4 w-4" /> 添加行程
             </Button>
           </div>
@@ -236,7 +236,7 @@ function CalendarScheduleEventManager() {
       </Dialog>
 
       <Dialog open={isAddingItem} onOpenChange={setIsAddingItem}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[350px] h-[60vh] overflow-auto">
           <DialogHeader>
             <DialogTitle>{isEditingItem ? '編輯' : '添加'}{itemType === 'schedule' ? '課程' : '行程'}</DialogTitle>
           </DialogHeader>
@@ -245,7 +245,7 @@ function CalendarScheduleEventManager() {
       </Dialog>
 
       <Dialog open={!!deleteConfirmation} onOpenChange={() => setDeleteConfirmation(null)}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[350px] h-auto">
           <DialogHeader>
             <DialogTitle>確認刪除</DialogTitle>
           </DialogHeader>
