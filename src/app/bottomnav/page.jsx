@@ -5,6 +5,7 @@ import { useTheme } from 'next-themes';
 import { Home, Info, Settings, Loader, UserCircle } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 
 const NavItem = ({ href, Icon, text }) => (
   <Link href={href} className="flex flex-col items-center text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400">
@@ -19,21 +20,19 @@ const BottomNav = () => {
   const [imageToggle, setImageToggle] = useState(false);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const pathname = usePathname();
 
   const fetchUser = useCallback(async () => {
     setLoading(true);
     try {
-      console.log('Fetching user data...');
       const res = await fetch('/api/user', {
         method: 'GET',
         credentials: 'include',
       });
       if (res.ok) {
         const userData = await res.json();
-        console.log('User data received:', userData);
         setUser(userData);
       } else {
-        console.log('Failed to fetch user data, status:', res.status);
         setUser(null);
       }
     } catch (error) {
@@ -48,8 +47,7 @@ const BottomNav = () => {
     setMounted(true);
     fetchUser();
 
-    const handleUserStateChanged = (event) => {
-      console.log('userStateChanged event received', event);
+    const handleUserStateChanged = () => {
       fetchUser();
     };
 
@@ -61,17 +59,13 @@ const BottomNav = () => {
   }, [fetchUser]);
 
   useEffect(() => {
-    console.log('Current user state:', user);
-  }, [user]);
+    if (pathname === '/login') {
+      setUser(null);
+    }
+  }, [pathname]);
 
-  if (!mounted) {
-    return (
-      <nav className="fixed bottom-4 left-4 right-4 bg-white dark:bg-gray-900 shadow-lg rounded-full">
-        <div className="flex justify-center items-center h-16">
-          <Loader className="animate-spin h-5 w-5 text-gray-700 dark:text-gray-300" />
-        </div>
-      </nav>
-    );
+  if (!mounted || !user) {
+    return null;
   }
 
   const handleImageToggle = () => {
@@ -92,7 +86,7 @@ const BottomNav = () => {
                 <Loader className="animate-spin h-6 w-6 text-gray-700 dark:text-gray-300" />
                 <span className="text-xs mt-1 text-gray-700 dark:text-gray-300">載入中</span>
               </div>
-            ) : user ? (
+            ) : (
               <Link href="/personalprofile" className="flex flex-col items-center">
                 <div className="w-6 h-6 rounded-full overflow-hidden">
                   {user.pic ? (
@@ -110,11 +104,6 @@ const BottomNav = () => {
                   )}
                 </div>
                 <span className="text-xs mt-1 text-gray-700 dark:text-gray-300">個人檔案</span>
-              </Link>
-            ) : (
-              <Link href="/login" className="flex flex-col items-center">
-                <UserCircle className="h-6 w-6 text-gray-700 dark:text-gray-300" />
-                <span className="text-xs mt-1 text-gray-700 dark:text-gray-300">登入</span>
               </Link>
             )}
           </div>
