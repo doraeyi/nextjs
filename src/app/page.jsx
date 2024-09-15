@@ -202,6 +202,7 @@ function CalendarScheduleEventManager() {
           </div>
           <div className="mt-4">
             <h3 className="text-lg font-semibold mb-2">行程</h3>
+            <div className="max-h-[300px] overflow-y-auto">
             {events.length > 0 ? (
               events.map((event) => (
                 <div key={event.id} className="mb-2 p-2 border dark:border-gray-600 rounded">
@@ -221,6 +222,7 @@ function CalendarScheduleEventManager() {
             ) : (
               <p>今天沒有行程</p>
             )}
+            </div>
           </div>
           <div className="flex space-x-2 mt-4">
             <Button onClick={() => { setIsAddingItem(true); setItemType('schedule'); setIsEditingItem(false); setCurrentItem(null); }}>
