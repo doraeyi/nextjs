@@ -178,25 +178,27 @@ function CalendarScheduleEventManager() {
           </DialogHeader>
           <div className="mt-4">
             <h3 className="text-lg font-semibold mb-2">課程</h3>
-            {schedules.length > 0 ? (
-              schedules.map((schedule) => (
-                <div key={schedule.id} className="mb-2 p-2 border dark:border-gray-600 rounded">
-                  <div className="font-bold">{schedule.title}</div>
-                  <div>{schedule.start_time} - {schedule.end_time}</div>
-                  <div>{schedule.description}</div>
-                  <div className="mt-2">
-                    <Button variant="outline" size="sm" onClick={() => { setCurrentItem(schedule); setItemType('schedule'); setIsEditingItem(true); setIsAddingItem(true); }} className="mr-2">
-                      <Edit className="mr-2 h-4 w-4" /> 編輯
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => setDeleteConfirmation({ ...schedule, type: 'schedule' })}>
-                      <Trash className="mr-2 h-4 w-4" /> 刪除
-                    </Button>
+            <div className="max-h-[300px] overflow-y-auto">
+              {schedules.length > 0 ? (
+                schedules.map((schedule) => (
+                  <div key={schedule.id} className="mb-2 p-2 border dark:border-gray-600 rounded">
+                    <div className="font-bold">{schedule.title}</div>
+                    <div>{schedule.start_time} - {schedule.end_time}</div>
+                    <div>{schedule.description}</div>
+                    <div className="mt-2">
+                      <Button variant="outline" size="sm" onClick={() => { setCurrentItem(schedule); setItemType('schedule'); setIsEditingItem(true); setIsAddingItem(true); }} className="mr-2">
+                        <Edit className="mr-2 h-4 w-4" /> 編輯
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => setDeleteConfirmation({ ...schedule, type: 'schedule' })}>
+                        <Trash className="mr-2 h-4 w-4" /> 刪除
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              ))
-            ) : (
-              <p>今天沒有課程</p>
-            )}
+                ))
+              ) : (
+                <p>今天沒有課程</p>
+              )}
+            </div>
           </div>
           <div className="mt-4">
             <h3 className="text-lg font-semibold mb-2">行程</h3>
