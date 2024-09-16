@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { FaGoogle } from 'react-icons/fa';
 
 const LoginPage = () => {
   const router = useRouter();
@@ -89,66 +90,76 @@ const LoginPage = () => {
     },
   });
 
+
   return (
-    <div className='flex justify-center items-center min-h-screen bg-gray-100 dark:bg-gray-900'>
-      <div className='mx-auto max-w-md p-8 bg-white dark:bg-gray-800 shadow-md rounded-lg w-full'>
-        <form onSubmit={handleSubmit}>
-          <h2 className='text-2xl font-bold mb-6 text-center text-gray-900 dark:text-white'>登入</h2>
+    <div className='flex flex-col justify-start items-center  bg-gradient-to-br p-4 pt-12 sm:pt-24'>
+      <div className='w-full max-w-sm bg-white dark:bg-gray-800 shadow-xl rounded-2xl overflow-hidden'>
+        <div className='p-6'>
+          <h2 className='text-2xl font-bold mb-4 text-center text-gray-900 dark:text-white'>登入 MeowTrade</h2>
           {error && (
             <Alert variant='destructive' className='mb-4'>
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          <div className='space-y-4'>
+          <form onSubmit={handleSubmit} className='space-y-4'>
             <div>
-              <Label htmlFor='account' className="text-gray-700 dark:text-gray-300">帳號</Label>
+              <Label htmlFor='account' className="text-sm font-medium text-gray-700 dark:text-gray-300">帳號</Label>
               <Input 
                 id='account' 
                 name='account' 
                 type='text' 
                 placeholder='請輸入帳號' 
                 required 
-                className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                className="mt-1 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             <div>
-              <Label htmlFor='password' className="text-gray-700 dark:text-gray-300">密碼</Label>
+              <Label htmlFor='password' className="text-sm font-medium text-gray-700 dark:text-gray-300">密碼</Label>
               <Input 
                 id='password' 
                 name='password' 
                 type='password' 
                 placeholder='請輸入密碼' 
                 required 
-                className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                className="mt-1 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
-            <Link href='/forgot-password' className='text-sm text-blue-600 dark:text-blue-400 hover:underline block text-right'>
-              忘記密碼？
-            </Link>
-          </div>
-          <Button 
-            type='submit' 
-            className='w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600' 
-            disabled={loading}
-          >
-            {loading ? '登入中...' : '登入'}
-          </Button>
-        </form>
-        <div className='mt-6'>
+            <div className='flex items-center justify-between text-sm'>
+              <div className='flex items-center'>
+                <input id="remember_me" name="remember_me" type="checkbox" className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
+                <label htmlFor="remember_me" className="ml-2 block text-gray-700 dark:text-gray-300">
+                  記住我
+                </label>
+              </div>
+              <Link href='/forgot-password' className='font-medium text-blue-600 dark:text-blue-400 hover:underline'>
+                忘記密碼？
+              </Link>
+            </div>
+            <Button 
+              type='submit' 
+              className='w-full bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600 transition duration-150 ease-in-out' 
+              disabled={loading}
+            >
+              {loading ? '登入中...' : '登入'}
+            </Button>
+          </form>
+        </div>
+        <div className='px-6 py-4 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600'>
           <Button 
             variant='outline' 
-            className='w-full border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' 
+            className='w-full flex items-center justify-center space-x-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 transition duration-150 ease-in-out' 
             onClick={() => googleLogin()} 
             disabled={loading}
           >
-            使用 Google 登入
+            <FaGoogle className="w-4 h-4" />
+            <span>使用 Google 登入</span>
           </Button>
-        </div>
-        <div className='mt-6 text-center text-sm text-gray-600 dark:text-gray-400'>
-          還沒有帳號？{' '}
-          <Link href='/signup' className='text-blue-600 dark:text-blue-400 hover:underline'>
-            註冊
-          </Link>
+          <p className='mt-4 text-center text-xs text-gray-600 dark:text-gray-400'>
+            還沒有帳號？{' '}
+            <Link href='/signup' className='font-medium text-blue-600 dark:text-blue-400 hover:underline'>
+              立即註冊
+            </Link>
+          </p>
         </div>
       </div>
     </div>
