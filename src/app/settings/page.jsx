@@ -1,9 +1,18 @@
 "use client"
 import React, { useState, useEffect } from 'react';
+import { useTheme } from 'next-themes';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { FiLoader, FiUpload, FiSave } from "react-icons/fi";
+import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
+import dynamic from 'next/dynamic';
+
+const FiLoader = dynamic(() => import('react-icons/fi').then(mod => mod.FiLoader), { ssr: false });
+const FiUpload = dynamic(() => import('react-icons/fi').then(mod => mod.FiUpload), { ssr: false });
+const FiSave = dynamic(() => import('react-icons/fi').then(mod => mod.FiSave), { ssr: false });
+const FiSun = dynamic(() => import('react-icons/fi').then(mod => mod.FiSun), { ssr: false });
+const FiMoon = dynamic(() => import('react-icons/fi').then(mod => mod.FiMoon), { ssr: false });
+const FiLogOut = dynamic(() => import('react-icons/fi').then(mod => mod.FiLogOut), { ssr: false });
 
 const ProfileEdit = () => {
   const [user, setUser] = useState({ username: '', account: '', pic: '' });
@@ -12,8 +21,12 @@ const ProfileEdit = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [alert, setAlert] = useState(null);
+  const [usernameError, setUsernameError] = useState('');
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     fetchUserData();
   }, []);
 
@@ -32,6 +45,22 @@ const ProfileEdit = () => {
     }
   };
 
+  const validateUsername = (username) => {
+    const usernameRegex = /^[\u4e00-\u9fa5a-zA-Z0-9_]{2,20}$/;
+    if (!usernameRegex.test(username)) {
+      setUsernameError('用戶名必須是 2-20 個字符，可以包含中文、字母、數字和下劃線');
+      return false;
+    }
+    setUsernameError('');
+    return true;
+  };
+
+  const handleUsernameChange = (e) => {
+    const newUsername = e.target.value;
+    setUser({ ...user, username: newUsername });
+    validateUsername(newUsername);
+  };
+
   const handleUpload = async () => {
     setIsUploading(true);
     try {
@@ -46,17 +75,21 @@ const ProfileEdit = () => {
         setUser(prevUser => ({ ...prevUser, pic: updatedUser.pic }));
         setAlert({ type: 'success', title: '成功', description: '頭像更新成功' });
       } else {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update profile picture');
+        throw new Error('Failed to update profile picture');
       }
     } catch (error) {
-      setAlert({ type: 'error', title: '錯誤', description: error.message || '頭像更新失敗' });
+      setAlert({ type: 'error', title: '錯誤', description: '頭像更新失敗' });
     } finally {
       setIsUploading(false);
     }
   };
 
   const handleSave = async () => {
+    if (!validateUsername(user.username)) {
+      setAlert({ type: 'error', title: '錯誤', description: '無效的用戶名' });
+      return;
+    }
+
     setIsSaving(true);
     try {
       const response = await fetch('/api/user', {
@@ -73,76 +106,114 @@ const ProfileEdit = () => {
         const result = await response.json();
         setAlert({ type: 'success', title: '成功', description: result.message || '資料更新成功' });
         setNewPassword('');
-        fetchUserData(); // 重新獲取用戶資料以確保顯示最新信息
+        fetchUserData();
       } else {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update profile');
+        throw new Error('Failed to update profile');
       }
     } catch (error) {
-      setAlert({ type: 'error', title: '錯誤', description: error.message || '資料更新失敗' });
+      setAlert({ type: 'error', title: '錯誤', description: '資料更新失敗' });
     } finally {
       setIsSaving(false);
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      const response = await fetch('/api/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (response.ok) {
+        // Redirect to login page or home page after successful logout
+        window.location.href = '/login';
+      } else {
+        throw new Error('登出失敗');
+      }
+    } catch (error) {
+      setAlert({ type: 'error', title: '錯誤', description: '登出失敗，請稍後再試' });
+    }
+  };
+
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
+
+  if (!mounted) return null;
+
   return (
-    <div className="space-y-4">
-      <div className="flex space-x-2">
+    <Card className="w-full max-w-md mx-auto mt-8">
+      <CardHeader className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">個人資料編輯</h2>
+        <div className="flex space-x-2">
+          <Button variant="outline" size="icon" onClick={toggleTheme}>
+            {theme === 'dark' ? <FiSun className="h-4 w-4" /> : <FiMoon className="h-4 w-4" />}
+          </Button>
+          <Button variant="outline" size="icon" onClick={handleLogout}>
+            <FiLogOut className="h-4 w-4" />
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Input
+            type="text"
+            placeholder="輸入圖片URL"
+            value={imageUrl}
+            onChange={(e) => setImageUrl(e.target.value)}
+          />
+          <Button
+            onClick={handleUpload}
+            disabled={isUploading || !imageUrl}
+            className="w-full"
+          >
+            {isUploading ? (
+              <FiLoader className="h-4 w-4 animate-spin mr-2" />
+            ) : (
+              <FiUpload className="h-4 w-4 mr-2" />
+            )}
+            <span>{isUploading ? '上傳中...' : '上傳頭像'}</span>
+          </Button>
+        </div>
+
+        <div>
+          <Input
+            type="text"
+            placeholder="用戶名"
+            value={user.username}
+            onChange={handleUsernameChange}
+            className={usernameError ? 'border-red-500' : ''}
+          />
+          {usernameError && <p className="text-red-500 text-sm mt-1">{usernameError}</p>}
+        </div>
+
         <Input
-          type="text"
-          placeholder="輸入圖片URL"
-          value={imageUrl}
-          onChange={(e) => setImageUrl(e.target.value)}
-          className="flex-grow"
+          type="password"
+          placeholder="新密碼（如果要更改）"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
         />
+      </CardContent>
+      <CardFooter>
         <Button
-          onClick={handleUpload}
-          disabled={isUploading || !imageUrl}
-          className="flex items-center space-x-2"
+          onClick={handleSave}
+          disabled={isSaving || !!usernameError}
+          className="w-full"
         >
-          {isUploading ? (
-            <FiLoader className="h-4 w-4 animate-spin" />
+          {isSaving ? (
+            <FiLoader className="h-4 w-4 animate-spin mr-2" />
           ) : (
-            <FiUpload className="h-4 w-4" />
+            <FiSave className="h-4 w-4 mr-2" />
           )}
-          <span>{isUploading ? '上傳中...' : '上傳'}</span>
+          <span>{isSaving ? '保存中...' : '保存更改'}</span>
         </Button>
-      </div>
-
-      <Input
-        type="text"
-        placeholder="用戶名"
-        value={user.username}
-        onChange={(e) => setUser({ ...user, username: e.target.value })}
-      />
-
-      <Input
-        type="password"
-        placeholder="新密碼（如果要更改）"
-        value={newPassword}
-        onChange={(e) => setNewPassword(e.target.value)}
-      />
-
-      <Button
-        onClick={handleSave}
-        disabled={isSaving}
-        className="flex items-center space-x-2"
-      >
-        {isSaving ? (
-          <FiLoader className="h-4 w-4 animate-spin" />
-        ) : (
-          <FiSave className="h-4 w-4" />
-        )}
-        <span>{isSaving ? '保存中...' : '保存更改'}</span>
-      </Button>
-
+      </CardFooter>
       {alert && (
-        <Alert variant={alert.type === 'success' ? 'default' : 'destructive'}>
+        <Alert variant={alert.type === 'success' ? 'default' : 'destructive'} className="mt-4">
           <AlertTitle>{alert.title}</AlertTitle>
           <AlertDescription>{alert.description}</AlertDescription>
         </Alert>
       )}
-    </div>
+    </Card>
   );
 };
 
