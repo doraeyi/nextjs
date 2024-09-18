@@ -196,7 +196,7 @@ function CalendarScheduleEventManager() {
   };
 
   return (
-    <div className="p-4 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
+    <div className="p-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
       {message && (
         <div className={`fixed top-4 right-4 p-4 rounded-md ${message.isError ? 'bg-red-500' : 'bg-green-500'} text-white`}>
           <h3 className="font-bold">{message.title}</h3>
