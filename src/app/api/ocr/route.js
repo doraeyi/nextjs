@@ -1,38 +1,36 @@
-// 文件: pages/api/ocr.js
+// 文件: src/app/api/ocr/route.js
+import { NextResponse } from 'next/server';
 import Tesseract from 'tesseract.js';
 import formidable from 'formidable';
 import fs from 'fs';
+import path from 'path';
+import os from 'os';
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+export const dynamic = 'force-dynamic';
 
-export default async function handler(req, res) {
-  if (req.method === 'POST') {
-    const form = new formidable.IncomingForm();
-    form.parse(req, async (err, fields, files) => {
-      if (err) {
-        res.status(500).json({ error: 'Error parsing form data' });
-        return;
-      }
+export async function POST(request) {
+  const formData = await request.formData();
+  const file = formData.get('image');
 
-      try {
-        const imagePath = files.image.path;
-        const { data: { text } } = await Tesseract.recognize(imagePath, 'chi_tra+eng');
-        
-        // 删除临时文件
-        fs.unlinkSync(imagePath);
+  if (!file) {
+    return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
+  }
 
-        res.status(200).json({ text });
-      } catch (error) {
-        console.error('OCR Error:', error);
-        res.status(500).json({ error: 'OCR processing failed' });
-      }
-    });
-  } else {
-    res.setHeader('Allow', ['POST']);
-    res.status(405).end(`Method ${req.method} Not Allowed`);
+  const buffer = await file.arrayBuffer();
+  const filename = file.name.replace(/\.[^/.]+$/, "");
+  const tempDir = os.tmpdir();
+  const filepath = path.join(tempDir, `${filename}.jpg`);
+
+  try {
+    await fs.promises.writeFile(filepath, Buffer.from(buffer));
+    const { data: { text } } = await Tesseract.recognize(filepath, 'chi_tra+eng');
+
+    // 删除临时文件
+    await fs.promises.unlink(filepath);
+
+    return NextResponse.json({ text }, { status: 200 });
+  } catch (error) {
+    console.error('OCR Error:', error);
+    return NextResponse.json({ error: 'OCR processing failed' }, { status: 500 });
   }
 }
