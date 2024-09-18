@@ -24,7 +24,7 @@ export const POST = async (req) => {
         );
 
         if (results.length === 0) {
-            // 用戶不存在，返回錯誤信息
+            // 用戶不存在，返回錯誤信息 
             return NextResponse.json({ error: "用戶未註冊", redirect: "/register" }, { status: 404 })
         }
 

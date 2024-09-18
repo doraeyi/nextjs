@@ -1,9 +1,10 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Camera } from 'lucide-react';
 
 const QuestionCreator = () => {
   const [questionType, setQuestionType] = useState('');
@@ -16,6 +17,7 @@ const QuestionCreator = () => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userAnswer, setUserAnswer] = useState('');
   const [feedback, setFeedback] = useState(null);
+  const fileInputRef = useRef(null);
 
   const handleOptionChange = (index, value) => {
     const newOptions = [...options];
@@ -81,6 +83,19 @@ const QuestionCreator = () => {
     }
   };
 
+  const handleCameraClick = () => {
+    fileInputRef.current.click();
+  };
+
+  const handleImageCapture = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      // 这里可以添加图像处理和文字识别的逻辑
+      // 为了演示，我们只是将文件名设置为问题文本
+      setQuestion(`Scanned text from: ${file.name}`);
+    }
+  };
+
   return (
     <div className="space-y-8">
       {!practiceMode ? (
@@ -97,12 +112,25 @@ const QuestionCreator = () => {
               </SelectContent>
             </Select>
 
-            <textarea
-              className="w-full p-2 border rounded"
-              placeholder="輸入題目"
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-            />
+            <div className="flex items-center space-x-2">
+              <textarea
+                className="w-full p-2 border rounded"
+                placeholder="輸入題目"
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+              />
+              <Button type="button" onClick={handleCameraClick} className="p-2">
+                <Camera size={24} />
+              </Button>
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handleImageCapture}
+                ref={fileInputRef}
+                className="hidden"
+              />
+            </div>
 
             {questionType === 'multiple' && (
               <div className="space-y-2">
