@@ -17,6 +17,7 @@ const QuestionCreator = () => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userAnswer, setUserAnswer] = useState('');
   const [feedback, setFeedback] = useState(null);
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
   const fileInputRef = useRef(null);
 
   const handleOptionChange = (index, value) => {
@@ -87,13 +88,78 @@ const QuestionCreator = () => {
     fileInputRef.current.click();
   };
 
-  const handleImageCapture = (event) => {
+  const handleImageCapture = async (event) => {
     const file = event.target.files[0];
     if (file) {
-      // 这里可以添加图像处理和文字识别的逻辑
-      // 为了演示，我们只是将文件名设置为问题文本
-      setQuestion(`Scanned text from: ${file.name}`);
+      setIsProcessingImage(true);
+      try {
+        const compressedImage = await compressImage(file);
+
+        const formData = new FormData();
+        formData.append('image', compressedImage);
+
+        const response = await fetch('/api/ocr', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error('OCR request failed');
+        }
+
+        const result = await response.json();
+        setQuestion(result.text);
+      } catch (error) {
+        console.error('Error processing image:', error);
+        alert('處理圖像時發生錯誤。請稍後再試。');
+      } finally {
+        setIsProcessingImage(false);
+      }
     }
+  };
+
+  const compressImage = (file) => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          
+          const MAX_WIDTH = 800;
+          const MAX_HEIGHT = 600;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          canvas.toBlob((blob) => {
+            resolve(new File([blob], file.name, {
+              type: 'image/jpeg',
+              lastModified: Date.now()
+            }));
+          }, 'image/jpeg', 0.7);
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
   };
 
   return (
@@ -119,7 +185,7 @@ const QuestionCreator = () => {
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
               />
-              <Button type="button" onClick={handleCameraClick} className="p-2">
+              <Button type="button" onClick={handleCameraClick} className="p-2" disabled={isProcessingImage}>
                 <Camera size={24} />
               </Button>
               <input
@@ -131,6 +197,7 @@ const QuestionCreator = () => {
                 className="hidden"
               />
             </div>
+            {isProcessingImage && <p>正在處理圖像，請稍候...</p>}
 
             {questionType === 'multiple' && (
               <div className="space-y-2">
