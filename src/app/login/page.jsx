@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { FaGoogle } from 'react-icons/fa';
+import { Toaster, toast } from 'react-hot-toast';
 
 const LoginPage = () => {
   const router = useRouter();
@@ -35,13 +36,17 @@ const LoginPage = () => {
       }
 
       if (data.message === '登錄成功') {
-        window.location.href = '/home';
+        toast.success('登入成功！');
+        setTimeout(() => {
+          window.location.href = '/home';
+        }, 1500); // 延遲 1.5 秒後跳轉，讓用戶有時間看到 toast
       } else {
         throw new Error(data.error || '登入失敗。請稍後再試。');
       }
     } catch (error) {
       console.error('Login error:', error);
       setError(error.message);
+      toast.error(error.message);
     } finally {
       setLoading(false);
     }
@@ -74,25 +79,30 @@ const LoginPage = () => {
           }
 
           if (data.success) {
-            window.location.href = '/home';
+            toast.success('Google 登入成功！');
+            setTimeout(() => {
+              window.location.href = '/home';
+            }, 1500);
           } else {
             throw new Error(data.message || 'Google 登入失敗');
           }
         } catch (error) {
           console.error('Google login error:', error);
           setError(error.message);
+          toast.error(error.message);
         }
       }
     },
     onError: (err) => {
       console.error('Google login error:', err);
       setError('Google 登入失敗，請稍後再試。');
+      toast.error('Google 登入失敗，請稍後再試。');
     },
   });
 
-
   return (
-    <div className='flex flex-col justify-start items-center  bg-gradient-to-br p-4 pt-12 sm:pt-24'>
+    <div className='flex flex-col justify-start items-center bg-gradient-to-br p-4 pt-12 sm:pt-24'>
+      <Toaster position="top-center" reverseOrder={false} />
       <div className='w-full max-w-sm bg-white dark:bg-gray-800 shadow-xl rounded-2xl overflow-hidden'>
         <div className='p-6'>
           <h2 className='text-2xl font-bold mb-4 text-center text-gray-900 dark:text-white'>登入 MeowTrade</h2>
