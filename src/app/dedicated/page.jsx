@@ -11,7 +11,11 @@ const dedicated = () => {
   <>
   <main className="flex-grow p-4">
   <Link href="/dedicated/questionbank" className="text-blue-500 hover:underline">
-        題庫
+        新增題庫
+      </Link>
+    <hr />
+      <Link href="/dedicated/practice" className="text-blue-500 hover:underline">
+        自我練習
       </Link>
   
       </main>

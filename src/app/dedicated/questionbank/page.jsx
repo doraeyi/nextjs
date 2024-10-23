@@ -35,6 +35,13 @@ export default function Home() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // 檢查題目類型，並設定正確答案
+    let correctAns = correctAnswer;
+    if (questionType === 'multiple_choice') {
+      correctAns = options[parseInt(correctAnswer)]; // 選擇題將選項轉為數值
+    }
+
     const res = await fetch('/api/questions', {
       method: 'POST',
       headers: {
@@ -45,7 +52,7 @@ export default function Home() {
         questionText,
         questionType,
         options: questionType === 'multiple_choice' ? options : null,
-        correctAnswer,
+        correctAnswer: correctAns, // 傳遞正確答案
       }),
     });
 
@@ -111,6 +118,20 @@ export default function Home() {
                 className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-500"
               />
             ))}
+            <h4 className="font-semibold">選擇正確答案</h4>
+            <select
+              value={correctAnswer}
+              onChange={(e) => setCorrectAnswer(e.target.value)}
+              required
+              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-500"
+            >
+              <option value="" disabled>選擇正確答案</option>
+              {options.map((option, index) => (
+                <option key={index} value={index.toString()}>
+                  選項 {index + 1}: {option}
+                </option>
+              ))}
+            </select>
           </>
         )}
 
