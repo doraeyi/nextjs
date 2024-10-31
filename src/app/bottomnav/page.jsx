@@ -108,18 +108,20 @@ const BottomNav = () => {
             )}
           </div>
         </div>
-        <button 
-          className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 w-20 h-20 bg-blue-900 rounded-full flex items-center justify-center shadow-lg hover:bg-blue-600 transition-colors overflow-hidden"
-          onClick={handleImageToggle}
-        >
-          <Image
-            src={imageToggle ? "/cat2.png" : "/cat1.png"}
-            alt="Toggle cat image"
-            width={80}
-            height={80}
-            className="object-cover"
-          />
-        </button>
+        
+        <button
+        className="absolute left-1/2 top-1/4 -translate-x-1/2 -translate-y-1/2 w-20 h-20 bg-blue-900 rounded-full flex items-center justify-center shadow-lg hover:bg-blue-600 transition-colors overflow-hidden"
+        onClick={handleImageToggle}
+      >
+        <Image
+          src={imageToggle ? "/cat2.png" : "/cat1.png"}
+          alt="Toggle cat image"
+          width={80}
+          height={80}
+          className="object-cover"
+        />
+      </button>
+      
       </div>
     </nav>
   );

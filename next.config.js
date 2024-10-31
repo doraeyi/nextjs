@@ -6,9 +6,9 @@ const withPWA = require("@ducanh2912/next-pwa").default({
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: ['drive.usercontent.google.com'],
+    domains: ['drive.usercontent.google.com', 'ibb.co'], // 添加 ibb.co
   },
-  // 這裡可以添加其他 Next.js 配置
+  // 这里可以添加其他 Next.js 配置
 };
 
 module.exports = withPWA(nextConfig);

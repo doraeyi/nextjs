@@ -1,4 +1,5 @@
 
+
 import {Pagination,PaginationContent,PaginationEllipsis,PaginationItem,PaginationLink,PaginationNext,PaginationPrevious,} from "@/components/ui/pagination"
 import Link from 'next/link';
 
@@ -17,7 +18,10 @@ const dedicated = () => {
       <Link href="/dedicated/practice" className="text-blue-500 hover:underline">
         自我練習
       </Link>
-  
+      <hr />
+      <Link href="/dedicated/transcript" className="text-blue-500 hover:underline">
+        學期成績單
+      </Link>
       </main>
       </>
   <>

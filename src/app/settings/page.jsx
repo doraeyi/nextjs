@@ -16,7 +16,7 @@ const FiLogOut = dynamic(() => import('react-icons/fi').then(mod => mod.FiLogOut
 
 const ProfileEdit = () => {
   const [user, setUser] = useState({ username: '', account: '', pic: '' });
-  const [imageUrl, setImageUrl] = useState('');
+  const [selectedFile, setSelectedFile] = useState(null);
   const [newPassword, setNewPassword] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -36,7 +36,6 @@ const ProfileEdit = () => {
       if (response.ok) {
         const userData = await response.json();
         setUser(userData);
-        setImageUrl(userData.pic || '');
       } else {
         throw new Error('Failed to fetch user data');
       }
@@ -61,13 +60,24 @@ const ProfileEdit = () => {
     validateUsername(newUsername);
   };
 
+  const handleFileChange = (e) => {
+    setSelectedFile(e.target.files[0]);
+  };
+
   const handleUpload = async () => {
+    if (!selectedFile) {
+      setAlert({ type: 'error', title: '錯誤', description: '請選擇一個圖片文件' });
+      return;
+    }
+
     setIsUploading(true);
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+
     try {
       const response = await fetch('/api/user', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pic: imageUrl }),
+        body: formData,  // FormData 自動設置正確的 headers
       });
 
       if (response.ok) {
@@ -117,23 +127,6 @@ const ProfileEdit = () => {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      const response = await fetch('/api/logout', {
-        method: 'POST',
-        credentials: 'include',
-      });
-      if (response.ok) {
-        // Redirect to login page or home page after successful logout
-        window.location.href = '/login';
-      } else {
-        throw new Error('登出失敗');
-      }
-    } catch (error) {
-      setAlert({ type: 'error', title: '錯誤', description: '登出失敗，請稍後再試' });
-    }
-  };
-
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
@@ -148,22 +141,18 @@ const ProfileEdit = () => {
           <Button variant="outline" size="icon" onClick={toggleTheme}>
             {theme === 'dark' ? <FiSun className="h-4 w-4" /> : <FiMoon className="h-4 w-4" />}
           </Button>
-          <Button variant="outline" size="icon" onClick={handleLogout}>
-            <FiLogOut className="h-4 w-4" />
-          </Button>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <Input
-            type="text"
-            placeholder="輸入圖片URL"
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
           />
           <Button
             onClick={handleUpload}
-            disabled={isUploading || !imageUrl}
+            disabled={isUploading || !selectedFile}
             className="w-full"
           >
             {isUploading ? (
