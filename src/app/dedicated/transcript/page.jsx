@@ -1,8 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Search } from 'lucide-react';
+import { Toaster, toast } from 'react-hot-toast';
 
 export default function GradeForm() {
   const [subjects, setSubjects] = useState([]);
@@ -11,7 +11,6 @@ export default function GradeForm() {
   const [selectedSemester, setSelectedSemester] = useState('');
   const [score, setScore] = useState('');
   const [grades, setGrades] = useState([]);
-  const [message, setMessage] = useState('');
   const [showGrades, setShowGrades] = useState(false);
   const [filterSemester, setFilterSemester] = useState('');
   const [loadingStates, setLoadingStates] = useState({
@@ -66,6 +65,7 @@ export default function GradeForm() {
       }
     } catch (error) {
       console.error(`Error fetching ${type}:`, error);
+      toast.error(`無法載入${type === 'subjects' ? '科目' : type === 'semesters' ? '學期' : '成績'}資料`);
       setErrors(prev => ({
         ...prev,
         [type]: `無法載入${type === 'subjects' ? '科目' : type === 'semesters' ? '學期' : '成績'}資料`
@@ -85,7 +85,6 @@ export default function GradeForm() {
     e.preventDefault();
     setLoadingStates(prev => ({ ...prev, submission: true }));
     setErrors(prev => ({ ...prev, submission: null }));
-    setMessage('');
 
     try {
       const response = await fetch('/api/grades', {
@@ -103,11 +102,12 @@ export default function GradeForm() {
         throw new Error(errorData.message || '儲存失敗');
       }
 
-      setMessage('成績已成功儲存');
+      toast.success('成績已成功儲存');
       resetForm();
       await fetchData('grades', '/api/grades');
     } catch (error) {
       console.error('Error saving grade:', error);
+      toast.error(error.message || '儲存時發生錯誤');
       setErrors(prev => ({
         ...prev,
         submission: error.message || '儲存時發生錯誤'
@@ -156,22 +156,13 @@ export default function GradeForm() {
 
   return (
     <div className="mx-auto mt-8 px-1 space-y-6">
-
-
-
+      <Toaster position="top-center" reverseOrder={false} />
+      
       <Card>
         <CardHeader>
           <CardTitle>新增成績</CardTitle>
         </CardHeader>
         <CardContent>
-          {(message || errors.submission) && (
-            <Alert variant={message ? 'default' : 'destructive'} className="mb-4">
-              <AlertDescription>
-                {message || errors.submission}
-              </AlertDescription>
-            </Alert>
-          )}
-          
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">
@@ -191,9 +182,6 @@ export default function GradeForm() {
                   ))}
                 </select>
               </label>
-              {errors.semesters && (
-                <p className="mt-1 text-sm text-red-600">{errors.semesters}</p>
-              )}
             </div>
             
             <div>
@@ -214,9 +202,6 @@ export default function GradeForm() {
                   ))}
                 </select>
               </label>
-              {errors.subjects && (
-                <p className="mt-1 text-sm text-red-600">{errors.subjects}</p>
-              )}
             </div>
             
             <div>
@@ -287,14 +272,6 @@ export default function GradeForm() {
               </label>
             </div>
 
-            {errors.grades && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertDescription>
-                  {errors.grades}
-                </AlertDescription>
-              </Alert>
-            )}
-            
             {loadingStates.grades ? (
               <div className="text-center py-4 text-gray-500">
                 加載中...

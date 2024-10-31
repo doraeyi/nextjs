@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from 'react';
+import { Toaster, toast } from 'react-hot-toast';
 
 export default function Home() {
   const [questionText, setQuestionText] = useState('');
@@ -36,42 +37,48 @@ export default function Home() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // 檢查題目類型，並設定正確答案
+    // Set correct answer based on question type
     let correctAns = correctAnswer;
     if (questionType === 'multiple_choice') {
-      correctAns = options[parseInt(correctAnswer)]; // 選擇題將選項轉為數值
+      correctAns = options[parseInt(correctAnswer)]; // Convert to option value
     }
 
-    const res = await fetch('/api/questions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        subjectId,
-        questionText,
-        questionType,
-        options: questionType === 'multiple_choice' ? options : null,
-        correctAnswer: correctAns, // 傳遞正確答案
-      }),
-    });
+    try {
+      const res = await fetch('/api/questions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          subjectId,
+          questionText,
+          questionType,
+          options: questionType === 'multiple_choice' ? options : null,
+          correctAnswer: correctAns, // Pass the correct answer
+        }),
+      });
 
-    if (!res.ok) {
-      const errorData = await res.json();
-      console.error(errorData);
-      setError(errorData.message || 'Failed to submit the question');
-      return;
+      if (!res.ok) {
+        const errorData = await res.json();
+        console.error(errorData);
+        throw new Error(errorData.message || 'Failed to submit the question');
+      }
+
+      toast.success('題目新增成功！');
+      setQuestionText('');
+      setSubjectId('');
+      setOptions(['', '', '', '']);
+      setCorrectAnswer('');
+    } catch (error) {
+      console.error(error);
+      setError(error.message || '提交題目時發生錯誤');
+      toast.error(error.message || '提交題目時發生錯誤');
     }
-
-    alert('題目新增成功！');
-    setQuestionText('');
-    setSubjectId('');
-    setOptions(['', '', '', '']);
-    setCorrectAnswer('');
   };
 
   return (
     <div className="max-w-lg mx-auto p-6 border border-gray-300 rounded-lg shadow-lg bg-white">
+      <Toaster position="top-center" reverseOrder={false} />
       <h1 className="text-2xl font-bold text-center mb-6">自我練習系統</h1>
       {error && <p className="text-red-500 text-center">{error}</p>}
       <form onSubmit={handleSubmit} className="space-y-4">

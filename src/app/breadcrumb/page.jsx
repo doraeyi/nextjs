@@ -24,6 +24,8 @@ const DynamicBreadcrumb = () => {
     'questionbank':'題庫',
     'settings':'設定',
     'personalprofile':'個人檔案',
+    'transcript':'成績單',
+
     // 添加其他需要的映射
   };
 
