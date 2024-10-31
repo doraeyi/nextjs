@@ -4,8 +4,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Search } from 'lucide-react';
 
-
 export default function GradeForm() {
+  // [Previous state declarations remain the same...]
   const [subjects, setSubjects] = useState([]);
   const [semesters, setSemesters] = useState([]);
   const [selectedSubject, setSelectedSubject] = useState('');
@@ -28,6 +28,7 @@ export default function GradeForm() {
     submission: null
   });
 
+  // Data fetching functions remain the same...
   const fetchWithRetry = async (url, options = {}, retries = 3) => {
     for (let i = 0; i < retries; i++) {
       try {
@@ -82,6 +83,8 @@ export default function GradeForm() {
     fetchData('grades', '/api/grades');
   }, []);
   
+
+  // Other functions (handleSubmit, resetForm) remain the same...
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoadingStates(prev => ({ ...prev, submission: true }));
@@ -126,14 +129,17 @@ export default function GradeForm() {
 
   const filteredGrades = grades.filter(grade => {
     if (!filterSemester) return true;
+    // 確保使用完全相等比較，並將兩個值都轉換為相同類型
     return grade.semesterId.toString() === filterSemester.toString();
   });
 
+  // 修改分組邏輯以保證準確的學期分組
   const groupedGrades = filteredGrades.reduce((acc, grade) => {
+    // 使用 semesterId 作為鍵值
     const semesterId = grade.semesterId.toString();
     if (!acc[semesterId]) {
       acc[semesterId] = {
-        name: grade.semester_name,
+        name: grade.semester_name, // 確保這是正確的學期名稱
         grades: []
       };
     }
@@ -141,6 +147,7 @@ export default function GradeForm() {
     return acc;
   }, {});
 
+  // Calculate statistics for each semester
   const calculateSemesterStats = (semesterGrades) => {
     if (!semesterGrades.length) return { average: 0, highest: 0, lowest: 0, total: 0 };
   
@@ -155,13 +162,16 @@ export default function GradeForm() {
     };
   };
 
+  // Component rendering remains mostly the same, but update the grades display section
   return (
     <div className="max-w-4xl mx-auto mt-8 p-6 space-y-6">
+      {/* Grade Input Form Card - remains the same */}
       <Card>
         <CardHeader>
           <CardTitle>新增成績</CardTitle>
         </CardHeader>
         <CardContent>
+          {/* ... Form content remains the same ... */}
           {(message || errors.submission) && (
             <Alert 
               variant={message ? 'default' : 'destructive'}
@@ -262,6 +272,7 @@ export default function GradeForm() {
         </CardContent>
       </Card>
 
+      {/* Updated Grades Display Card */}
       {showGrades && (
         <Card>
           <CardHeader>
