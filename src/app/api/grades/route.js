@@ -123,7 +123,6 @@ export async function POST(request) {
       [tokenValidation.account]
     );
     
-
     if (users.length === 0) {
       return NextResponse.json({ error: "用戶不存在" }, { status: 404 });
     }
