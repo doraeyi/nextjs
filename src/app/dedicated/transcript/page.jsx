@@ -3,8 +3,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Search } from 'lucide-react';
-import ErrorMessage from '@/components/ui/ErrorMessage'; // 確保這裡是正確的路徑
-import LoadingSpinner from '@/components/ui/LoadingSpinner'; // 確保這裡是正確的路徑
+
 
 export default function GradeForm() {
   const [subjects, setSubjects] = useState([]);
