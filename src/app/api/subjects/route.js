@@ -11,3 +11,4 @@ export async function GET(req) {
     return new Response(JSON.stringify({ error: 'Error fetching subjects' }), { status: 500 });
   }
 }
+
