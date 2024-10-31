@@ -77,7 +77,7 @@ const ProfileEdit = () => {
     try {
       const response = await fetch('/api/user', {
         method: 'PUT',
-        body: formData,  // FormData 自動設置正確的 headers
+        body: formData,
       });
 
       if (response.ok) {
@@ -127,6 +127,19 @@ const ProfileEdit = () => {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      const response = await fetch('/api/logout', { method: 'POST' });
+      if (response.ok) {
+        window.location.href = '/login'; // Adjust the redirect as needed
+      } else {
+        throw new Error('登出失敗');
+      }
+    } catch (error) {
+      setAlert({ type: 'error', title: '錯誤', description: error.message || '登出失敗' });
+    }
+  };
+
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
@@ -140,6 +153,9 @@ const ProfileEdit = () => {
         <div className="flex space-x-2">
           <Button variant="outline" size="icon" onClick={toggleTheme}>
             {theme === 'dark' ? <FiSun className="h-4 w-4" /> : <FiMoon className="h-4 w-4" />}
+          </Button>
+          <Button variant="outline" size="icon" onClick={handleLogout}>
+            <FiLogOut className="h-4 w-4" />
           </Button>
         </div>
       </CardHeader>
