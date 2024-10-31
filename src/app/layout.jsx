@@ -58,7 +58,8 @@ export default function RootLayout({ children }) {
         <ThemeProvider attribute="class">
           <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}>
             <Navbar />
-            <main className="container mx-auto mt-4 pb-16"> {/* 添加 pb-16 來為底部導航騰出空間 */}
+            <main className="container mx-auto mt-4 pb-16 px-2">
+
               <DynamicBreadcrumb />
               {children}
             </main>

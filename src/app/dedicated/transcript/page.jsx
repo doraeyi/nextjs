@@ -142,10 +142,10 @@ export default function GradeForm() {
 
   const calculateSemesterStats = (semesterGrades) => {
     if (!semesterGrades.length) return { average: 0, highest: 0, lowest: 0, total: 0 };
-  
+
     const scores = semesterGrades.map(grade => grade.score);
     const total = scores.reduce((a, b) => a + b, 0);
-    
+
     return {
       average: (total / scores.length).toFixed(1),
       highest: Math.max(...scores),
@@ -155,7 +155,10 @@ export default function GradeForm() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto mt-8 p-6 space-y-6">
+    <div className="mx-auto mt-8 px-1 space-y-6">
+
+
+
       <Card>
         <CardHeader>
           <CardTitle>新增成績</CardTitle>
