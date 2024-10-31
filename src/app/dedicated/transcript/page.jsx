@@ -1,11 +1,10 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Search } from 'lucide-react';
 
 export default function GradeForm() {
-  // [Previous state declarations remain the same...]
   const [subjects, setSubjects] = useState([]);
   const [semesters, setSemesters] = useState([]);
   const [selectedSubject, setSelectedSubject] = useState('');
@@ -19,16 +18,15 @@ export default function GradeForm() {
     subjects: true,
     semesters: true,
     grades: true,
-    submission: false
+    submission: false,
   });
   const [errors, setErrors] = useState({
     subjects: null,
     semesters: null,
     grades: null,
-    submission: null
+    submission: null,
   });
 
-  // Data fetching functions remain the same...
   const fetchWithRetry = async (url, options = {}, retries = 3) => {
     for (let i = 0; i < retries; i++) {
       try {
@@ -48,7 +46,7 @@ export default function GradeForm() {
     }
   };
 
-  const fetchData = async (type, url) => {
+  const fetchData = useCallback(async (type, url) => {
     setLoadingStates(prev => ({ ...prev, [type]: true }));
     setErrors(prev => ({ ...prev, [type]: null }));
 
@@ -70,21 +68,19 @@ export default function GradeForm() {
       console.error(`Error fetching ${type}:`, error);
       setErrors(prev => ({
         ...prev,
-        [type]: `無法載入${type === 'subjects' ? '科目' : type === 'semesters' ? '學期' : '成績'}資料`
+        [type]: `無法載入${type === 'subjects' ? '科目' : type === 'semesters' ? '學期' : '成績'}資料`,
       }));
     } finally {
       setLoadingStates(prev => ({ ...prev, [type]: false }));
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchData('subjects', '/api/subjects');
     fetchData('semesters', '/api/semesters');
     fetchData('grades', '/api/grades');
-  }, []);
-  
+  }, [fetchData]);
 
-  // Other functions (handleSubmit, resetForm) remain the same...
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoadingStates(prev => ({ ...prev, submission: true }));
@@ -98,7 +94,7 @@ export default function GradeForm() {
         body: JSON.stringify({
           subjectId: selectedSubject,
           semesterId: selectedSemester,
-          score: Number(score)
+          score: Number(score),
         }),
       });
 
@@ -114,7 +110,7 @@ export default function GradeForm() {
       console.error('Error saving grade:', error);
       setErrors(prev => ({
         ...prev,
-        submission: error.message || '儲存時發生錯誤'
+        submission: error.message || '儲存時發生錯誤',
       }));
     } finally {
       setLoadingStates(prev => ({ ...prev, submission: false }));
@@ -129,54 +125,44 @@ export default function GradeForm() {
 
   const filteredGrades = grades.filter(grade => {
     if (!filterSemester) return true;
-    // 確保使用完全相等比較，並將兩個值都轉換為相同類型
     return grade.semesterId.toString() === filterSemester.toString();
   });
 
-  // 修改分組邏輯以保證準確的學期分組
   const groupedGrades = filteredGrades.reduce((acc, grade) => {
-    // 使用 semesterId 作為鍵值
     const semesterId = grade.semesterId.toString();
     if (!acc[semesterId]) {
       acc[semesterId] = {
-        name: grade.semester_name, // 確保這是正確的學期名稱
-        grades: []
+        name: grade.semester_name,
+        grades: [],
       };
     }
     acc[semesterId].grades.push(grade);
     return acc;
   }, {});
 
-  // Calculate statistics for each semester
   const calculateSemesterStats = (semesterGrades) => {
     if (!semesterGrades.length) return { average: 0, highest: 0, lowest: 0, total: 0 };
-  
+
     const scores = semesterGrades.map(grade => grade.score);
     const total = scores.reduce((a, b) => a + b, 0);
-    
+
     return {
       average: (total / scores.length).toFixed(1),
       highest: Math.max(...scores),
       lowest: Math.min(...scores),
-      total: total
+      total: total,
     };
   };
 
-  // Component rendering remains mostly the same, but update the grades display section
   return (
     <div className="max-w-4xl mx-auto mt-8 p-6 space-y-6">
-      {/* Grade Input Form Card - remains the same */}
       <Card>
         <CardHeader>
           <CardTitle>新增成績</CardTitle>
         </CardHeader>
         <CardContent>
-          {/* ... Form content remains the same ... */}
           {(message || errors.submission) && (
-            <Alert 
-              variant={message ? 'default' : 'destructive'}
-              className="mb-4"
-            >
+            <Alert variant={message ? 'default' : 'destructive'} className="mb-4">
               <AlertDescription>
                 {message || errors.submission}
               </AlertDescription>
@@ -191,7 +177,7 @@ export default function GradeForm() {
                   value={filterSemester}
                   onChange={(e) => setFilterSemester(e.target.value)}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                > 
+                >
                   <option value="">請選擇學期</option>
                   {semesters.map((semester) => (
                     <option key={semester.id} value={semester.id}>
@@ -272,7 +258,6 @@ export default function GradeForm() {
         </CardContent>
       </Card>
 
-      {/* Updated Grades Display Card */}
       {showGrades && (
         <Card>
           <CardHeader>
@@ -297,10 +282,13 @@ export default function GradeForm() {
               </label>
             </div>
 
-            {errors.grades && <ErrorMessage message={errors.grades} />}
+            {errors.grades && <p className="mt-1 text-sm text-red-600">{errors.grades}</p>}
             
             {loadingStates.grades ? (
-              <LoadingSpinner />
+              <div className="text-center py-4 text-gray-500">
+                載入中...
+                <Loader2 className="animate-spin h-5 w-5 inline-block ml-2" />
+              </div>
             ) : filteredGrades.length === 0 ? (
               <div className="text-center py-4 text-gray-500">
                 目前沒有成績記錄
