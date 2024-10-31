@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Search } from 'lucide-react';
@@ -18,13 +18,13 @@ export default function GradeForm() {
     subjects: true,
     semesters: true,
     grades: true,
-    submission: false,
+    submission: false
   });
   const [errors, setErrors] = useState({
     subjects: null,
     semesters: null,
     grades: null,
-    submission: null,
+    submission: null
   });
 
   const fetchWithRetry = async (url, options = {}, retries = 3) => {
@@ -46,7 +46,7 @@ export default function GradeForm() {
     }
   };
 
-  const fetchData = useCallback(async (type, url) => {
+  const fetchData = async (type, url) => {
     setLoadingStates(prev => ({ ...prev, [type]: true }));
     setErrors(prev => ({ ...prev, [type]: null }));
 
@@ -68,18 +68,18 @@ export default function GradeForm() {
       console.error(`Error fetching ${type}:`, error);
       setErrors(prev => ({
         ...prev,
-        [type]: `無法載入${type === 'subjects' ? '科目' : type === 'semesters' ? '學期' : '成績'}資料`,
+        [type]: `無法載入${type === 'subjects' ? '科目' : type === 'semesters' ? '學期' : '成績'}資料`
       }));
     } finally {
       setLoadingStates(prev => ({ ...prev, [type]: false }));
     }
-  }, []);
+  };
 
   useEffect(() => {
     fetchData('subjects', '/api/subjects');
     fetchData('semesters', '/api/semesters');
     fetchData('grades', '/api/grades');
-  }, [fetchData]);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -94,7 +94,7 @@ export default function GradeForm() {
         body: JSON.stringify({
           subjectId: selectedSubject,
           semesterId: selectedSemester,
-          score: Number(score),
+          score: Number(score)
         }),
       });
 
@@ -110,7 +110,7 @@ export default function GradeForm() {
       console.error('Error saving grade:', error);
       setErrors(prev => ({
         ...prev,
-        submission: error.message || '儲存時發生錯誤',
+        submission: error.message || '儲存時發生錯誤'
       }));
     } finally {
       setLoadingStates(prev => ({ ...prev, submission: false }));
@@ -129,11 +129,11 @@ export default function GradeForm() {
   });
 
   const groupedGrades = filteredGrades.reduce((acc, grade) => {
-    const semesterId = grade.semesterId.toString();
+    const semesterId = grade.semesterId;
     if (!acc[semesterId]) {
       acc[semesterId] = {
         name: grade.semester_name,
-        grades: [],
+        grades: []
       };
     }
     acc[semesterId].grades.push(grade);
@@ -142,15 +142,15 @@ export default function GradeForm() {
 
   const calculateSemesterStats = (semesterGrades) => {
     if (!semesterGrades.length) return { average: 0, highest: 0, lowest: 0, total: 0 };
-
+  
     const scores = semesterGrades.map(grade => grade.score);
     const total = scores.reduce((a, b) => a + b, 0);
-
+    
     return {
       average: (total / scores.length).toFixed(1),
       highest: Math.max(...scores),
       lowest: Math.min(...scores),
-      total: total,
+      total: total
     };
   };
 
@@ -174,9 +174,11 @@ export default function GradeForm() {
               <label className="block text-sm font-medium text-gray-700">
                 選擇學期：
                 <select
-                  value={filterSemester}
-                  onChange={(e) => setFilterSemester(e.target.value)}
+                  value={selectedSemester}
+                  onChange={(e) => setSelectedSemester(e.target.value)}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  required
+                  disabled={loadingStates.semesters || loadingStates.submission}
                 >
                   <option value="">請選擇學期</option>
                   {semesters.map((semester) => (
@@ -282,12 +284,17 @@ export default function GradeForm() {
               </label>
             </div>
 
-            {errors.grades && <p className="mt-1 text-sm text-red-600">{errors.grades}</p>}
+            {errors.grades && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertDescription>
+                  {errors.grades}
+                </AlertDescription>
+              </Alert>
+            )}
             
             {loadingStates.grades ? (
               <div className="text-center py-4 text-gray-500">
-                載入中...
-                <Loader2 className="animate-spin h-5 w-5 inline-block ml-2" />
+                加載中...
               </div>
             ) : filteredGrades.length === 0 ? (
               <div className="text-center py-4 text-gray-500">
