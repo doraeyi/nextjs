@@ -82,6 +82,7 @@ export default function GradeForm() {
     fetchData('semesters', '/api/semesters');
     fetchData('grades', '/api/grades');
   }, []);
+  
 
   // Other functions (handleSubmit, resetForm) remain the same...
   const handleSubmit = async (e) => {
