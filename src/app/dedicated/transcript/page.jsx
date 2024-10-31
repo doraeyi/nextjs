@@ -303,14 +303,14 @@ export default function GradeForm() {
                       </div>
                       
                       <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
+                      <table className="min-w-full table-auto divide-y divide-gray-200">
                           <thead className="bg-gray-50">
                             <tr>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/2">
                                 科目
                               </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                成績
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/2">
+                              成績
                               </th>
                             </tr>
                           </thead>
@@ -320,8 +320,17 @@ export default function GradeForm() {
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   {grade.subject_name}
                                 </td>
-                                <td className={`px-6 py-4 whitespace-nowrap ${grade.score < 60 ? 'text-red-600' : ''}`}>
+                                <td className={`px-6  whitespace-nowrap flex items-center ${grade.score < 60 ? 'text-red-600' : ''}`}>
                                   {grade.score}
+                                  {grade.score >= 80 && (
+                                    <div className="ml-2 relative w-16 h-16">
+                                      <img
+                                        src="/good.png"
+                                        alt="Good score"
+                                        className="w-16 h-16 object-contain"
+                                      />
+                                    </div>
+                                  )}
                                 </td>
                               </tr>
                             ))}
