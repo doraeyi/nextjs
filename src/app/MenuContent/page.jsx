@@ -215,8 +215,93 @@ function CalendarScheduleEventManager() {
         className="rounded-md border"
       />
 
+      <Dialog open={showPopup} onOpenChange={setShowPopup}>
+        <DialogContent className="sm:max-w-[350px] h-[70vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>{date && format(date, 'yyyy年MM月dd日 EEEE', { locale: zhTW })}</DialogTitle>
+          </DialogHeader>
+          <div className="mt-4">
+            <h3 className="text-lg font-semibold mb-2">課程</h3>
+            <div className="max-h-[200px] overflow-y-auto">
+              {getSchedulesForDay(date).length > 0 ? (
+                getSchedulesForDay(date).map((schedule) => (
+                  <div key={schedule.id} className="mb-2 p-2 border dark:border-gray-600 rounded">
+                    <div className="font-bold">{schedule.title}</div>
+                    <div>{schedule.start_time} - {schedule.end_time}</div>
+                    <div>{schedule.description}</div>
+                    <div className="mt-2">
+                      <Button variant="outline" size="sm" onClick={() => { setCurrentItem(schedule); setItemType('schedule'); setIsEditingItem(true); setIsAddingItem(true); }} className="mr-2">
+                        <Edit className="mr-2 h-4 w-4" /> 編輯
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => setDeleteConfirmation({ ...schedule, type: 'schedule' })}>
+                        <Trash className="mr-2 h-4 w-4" /> 刪除
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p>今天沒有課程</p>
+              )}
+            </div>
+          </div>
+          <div className="mt-4">
+            <h3 className="text-lg font-semibold mb-2">行程</h3>
+            <div className="max-h-[200px] overflow-y-auto">
+            {events.length > 0 ? (
+              events.map((event) => (
+                <div key={event.id} className="mb-2 p-2 border dark:border-gray-600 rounded">
+                  <div className="font-bold">{event.title}</div>
+                  <div>{event.start_time} - {event.end_time}</div>
+                  <div>{event.description}</div>
+                  <div className="mt-2">
+                    <Button variant="outline" size="sm" onClick={() => { setCurrentItem(event); setItemType('event'); setIsEditingItem(true); setIsAddingItem(true); }} className="mr-2">
+                      <Edit className="mr-2 h-4 w-4" /> 編輯
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => setDeleteConfirmation({ ...event, type: 'event' })}>
+                      <Trash className="mr-2 h-4 w-4" /> 刪除
+                    </Button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p>今天沒有行程</p>
+            )}
+            </div>
+          </div>
+          <div className="flex space-x-2 mt-4">
+            <Button onClick={() => { setIsAddingItem(true); setItemType('schedule'); setIsEditingItem(false); setCurrentItem(null); }} className="text-sm">
+              <Plus className="mr-2 h-4 w-4" /> 添加課程
+            </Button>
+            <Button onClick={() => { setIsAddingItem(true); setItemType('event'); setIsEditingItem(false); setCurrentItem(null); }} className="text-sm">
+              <Plus className="mr-2 h-4 w-4" /> 添加行程
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
-     
+      <Dialog open={isAddingItem} onOpenChange={setIsAddingItem}>
+        <DialogContent className="sm:max-w-[350px] h-[60vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>{isEditingItem ? '編輯' : '添加'}{itemType === 'schedule' ? '課程' : '行程'}</DialogTitle>
+          </DialogHeader>
+          <ItemForm />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!deleteConfirmation} onOpenChange={() => setDeleteConfirmation(null)}>
+        <DialogContent className="sm:max-w-[350px] h-auto">
+          <DialogHeader>
+            <DialogTitle>確認刪除</DialogTitle>
+          </DialogHeader>
+          <DialogDescription>
+            您確定要刪除這個{deleteConfirmation?.type === 'schedule' ? '課程' : '行程'}嗎？此操作無法撤銷。
+          </DialogDescription>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirmation(null)}>取消</Button>
+            <Button variant="destructive" onClick={handleDeleteItem}>確認刪除</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
