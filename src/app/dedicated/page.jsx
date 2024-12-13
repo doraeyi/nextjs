@@ -22,6 +22,10 @@ const dedicated = () => {
       <Link href="/dedicated/transcript" className="text-blue-500 hover:underline">
         學期成績單
       </Link>
+      <hr />
+      <Link href="/dedicated/bookkeeping" className="text-blue-500 hover:underline">
+        記帳
+      </Link>
       </main>
       </>
   <>
