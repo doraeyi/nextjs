@@ -26,6 +26,10 @@ const dedicated = () => {
       <Link href="/dedicated/bookkeeping" className="text-blue-500 hover:underline">
         記帳
       </Link>
+      <hr />
+      <Link href="/dedicated/Game" className="text-blue-500 hover:underline">
+        過年遊戲
+      </Link>
       </main>
       </>
   <>

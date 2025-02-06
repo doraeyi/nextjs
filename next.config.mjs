@@ -1,13 +1,22 @@
-// /** @type {import('next').NextConfig} */
-import withPWAInit from "@ducanh2912/next-pwa";
+/** @type {import('next').NextConfig} */
+
+import withPWAInit from '@ducanh2912/next-pwa'
 
 const withPWA = withPWAInit({
-  dest: "public",
-});
+  dest: 'public'
+})
 
-export default withPWA({
-  // Your Next.js config
-});
-// const nextConfig = {};
+const nextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        hostname: 'drive.usercontent.google.com'
+      },
+      {
+        hostname: 'ibb.co'
+      }
+    ]
+  }
+}
 
-// export default nextConfig;
+export default withPWA(nextConfig)

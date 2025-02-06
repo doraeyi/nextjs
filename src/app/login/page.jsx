@@ -39,7 +39,7 @@ const LoginPage = () => {
         toast.success('登入成功！');
         setTimeout(() => {
           window.location.href = '/home';
-        }, 1500); // 延遲 1.5 秒後跳轉，讓用戶有時間看到 toast
+        }, 1500);
       } else {
         throw new Error(data.error || '登入失敗。請稍後再試。');
       }
@@ -60,44 +60,55 @@ const LoginPage = () => {
   };
 
   const googleLogin = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      const { access_token } = tokenResponse;
-      if (access_token) {
-        try {
-          const res = await fetch('/api/google-login', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ access_token }),
-          });
+    onSuccess: async (response) => {
+      try {
+        // Get user info from Google
+        const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: {
+            Authorization: `Bearer ${response.access_token}`,
+          },
+        });
+        
+        const userInfo = await userInfoResponse.json();
+        
+        // Call your backend with the access token and user info
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            access_token: response.access_token,
+            userInfo: userInfo
+          }),
+        });
 
-          const data = await res.json();
+        const data = await res.json();
 
-          if (!res.ok) {
-            throw new Error(data.message || 'Google 登入失敗');
-          }
-
-          if (data.success) {
-            toast.success('Google 登入成功！');
-            setTimeout(() => {
-              window.location.href = '/home';
-            }, 1500);
-          } else {
-            throw new Error(data.message || 'Google 登入失敗');
-          }
-        } catch (error) {
-          console.error('Google login error:', error);
-          setError(error.message);
-          toast.error(error.message);
+        if (!res.ok) {
+          throw new Error(data.error || 'Google 登入失敗');
         }
+
+        if (data.success) {
+          toast.success('Google 登入成功！');
+          setTimeout(() => {
+            window.location.href = '/home';
+          }, 1500);
+        } else {
+          throw new Error(data.error || 'Google 登入失敗');
+        }
+      } catch (error) {
+        console.error('Google login error:', error);
+        setError(error.message);
+        toast.error(error.message);
       }
     },
-    onError: (err) => {
-      console.error('Google login error:', err);
+    onError: (error) => {
+      console.error('Google login error:', error);
       setError('Google 登入失敗，請稍後再試。');
       toast.error('Google 登入失敗，請稍後再試。');
     },
+    scope: 'email profile',
   });
 
   return (
