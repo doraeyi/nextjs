@@ -9,6 +9,8 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { FaGoogle } from 'react-icons/fa';
+import { FaFacebookF} from 'react-icons/fa';
+import { FaInstagram } from 'react-icons/fa';
 import { Toaster, toast } from 'react-hot-toast';
 
 const LoginPage = () => {
@@ -165,23 +167,53 @@ const LoginPage = () => {
             </Button>
           </form>
         </div>
-        <div className='px-6 py-4 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600'>
-          <Button 
-            variant='outline' 
-            className='w-full flex items-center justify-center space-x-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 transition duration-150 ease-in-out' 
-            onClick={() => googleLogin()} 
+        <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
+      <div className="flex flex-col items-center space-y-4">
+        <div className="flex flex-row space-x-3 w-full">
+        <Button
+        variant="ghost"
+       className="flex-1 flex items-center justify-center text-gray-700 dark:text-gray-300 transition duration-150 ease-in-out hover:bg-transparent hover:shadow-none"
+        onClick={() => googleLogin()}
+        disabled={loading}
+      >
+        <div className="flex items-center justify-center p-2 rounded-full border border-gray-300 w-10 h-10">
+          <FaGoogle className="w-4 h-4 text-gray-600" />
+        </div>
+        {/* <span>使用 Google 登入</span> */}
+      </Button>
+
+
+          <Button
+            variant="ghost"
+              className="flex-1 flex items-center justify-center text-gray-700 dark:text-gray-300 transition duration-150 ease-in-out hover:bg-transparent hover:shadow-none"
+            onClick={() => facebookLogin()}
             disabled={loading}
           >
-            <FaGoogle className="w-4 h-4" />
-            <span>使用 Google 登入</span>
+            <div className="flex items-center justify-center p-2 rounded-full border border-gray-300 w-10 h-10">
+              <FaFacebookF className="w-4 h-4 text-blue-600" />
+            </div>
           </Button>
-          <p className='mt-4 text-center text-xs text-gray-600 dark:text-gray-400'>
-            還沒有帳號？{' '}
-            <Link href='/signup' className='font-medium text-blue-600 dark:text-blue-400 hover:underline'>
-              立即註冊
-            </Link>
-          </p>
+
+          <Button
+            variant="ghost"
+             className="flex-1 flex items-center justify-center text-gray-700 dark:text-gray-300 transition duration-150 ease-in-out hover:bg-transparent hover:shadow-none"
+            onClick={() => instagramLogin()}
+            disabled={loading}
+          >
+            <div className="flex items-center justify-center p-2 rounded-full border border-gray-300 w-10 h-10">
+              <FaInstagram className="w-4 h-4 text-pink-600" />
+            </div>
+          </Button>
         </div>
+
+        <p className="text-center text-xs text-gray-600 dark:text-gray-400">
+          還沒有帳號？{' '}
+          <Link href="/signup" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+            立即註冊
+          </Link>
+        </p>
+      </div>
+    </div>
       </div>
     </div>
   ); 
