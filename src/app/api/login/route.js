@@ -55,7 +55,7 @@ export const POST = async (req) => {
         expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
       });
 
-      return NextResponse.json({ message: "登錄成功" }, { status: 200 });
+      return NextResponse.json({ message: "登錄成功~" }, { status: 200 });
     } catch (err) {
       console.error('執行查詢時發生錯誤:', err);
       return NextResponse.json({ error: "服務器內部錯誤" }, { status: 500 });

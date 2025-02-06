@@ -41,7 +41,7 @@ const LoginPage = () => {
           window.location.href = '/home';
         }, 1500);
       } else {
-        throw new Error(data.error || '登入失敗。請稍後再試。');
+        throw new Error(data.error || '登入失敗。請稍後再試!。');
       }
     } catch (error) {
       console.error('Login error:', error);
