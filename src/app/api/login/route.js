@@ -21,7 +21,7 @@ export const POST = async (req) => {
       // 查詢用戶
       const [results] = await connection.query(
         'SELECT * FROM user WHERE account = ?',
-        [body.account]
+        [body.account] 
       );
       
       if (results.length === 0) {

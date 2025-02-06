@@ -14,7 +14,7 @@ import { Toaster, toast } from 'react-hot-toast';
 const LoginPage = () => {
   const router = useRouter();
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false); 
 
   const handleLogin = async (account, password) => {
     setError('');
