@@ -25,7 +25,7 @@ export const POST = async (req) => {
       );
       
       if (results.length === 0) {
-        return NextResponse.json({ error: "用戶未註冊", redirect: "/register" }, { status: 404 });
+        return NextResponse.json({ error: "用戶尙未註冊", redirect: "/register" }, { status: 404 });
       }
       
       const user = results[0];
