@@ -1,6 +1,12 @@
 
 'use client';
 import React, { useState, useEffect, useCallback } from 'react';
-<>
-<p>Hello Word!</p>
-</>
+
+const HelloWorld = () => {
+  return (
+     <>
+      <p>Hello Word!</p>
+    </>
+  );
+};
+ export default HelloWorld;
