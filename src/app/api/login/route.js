@@ -63,7 +63,7 @@ export const POST = async (req) => {
         expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
       });
 
-      return NextResponse.json({ message: "登錄成功" }, { status: 200 });
+      return NextResponse.json({ message: "登錄成功!" }, { status: 200 });
     }
     
     // Handle Google login
