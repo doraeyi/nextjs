@@ -220,9 +220,9 @@ const Page = () => {
   };
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="container p-0">
       {message && (
-        <div className={`fixed top-4 right-4 p-4 rounded-md ${message.isError ? 'bg-red-500' : 'bg-green-500'} text-white`}>
+        <div className={`fixed top-4 right-4  rounded-md ${message.isError ? 'bg-red-500' : 'bg-green-500'} text-white`}>
           <h3 className="font-bold">{message.title}</h3>
           <p>{message.description}</p>
         </div>
@@ -243,14 +243,14 @@ const Page = () => {
       </div>
 
       <Card>
-        <CardContent className="p-4">
+        <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
                 <tr>
-                  <th className="p-2 border bg-gray-50">時間</th>
+                  <th className="p-2 border bg-gray-50 w-16">時間</th>
                   {weekdays.map(day => (
-                    <th key={day} className="p-2 border bg-gray-50 text-center">
+                    <th key={day} className="p-2 border bg-gray-50 text-center ">
                       {day}
                     </th>
                   ))}
