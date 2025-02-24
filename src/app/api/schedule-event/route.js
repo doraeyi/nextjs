@@ -76,7 +76,7 @@ export async function POST(req) {
   try {
     const body = await req.json();
     console.log("Received POST data:", body);
-    const { type, date, title, description, start_time, end_time, day_of_week } = body;
+    const { type, date, title, description, start_time, end_time, day_of_week, classroom } = body;
 
     if (!type || !title || !start_time || !end_time) {
       return NextResponse.json({ error: "缺少必要欄位" }, { status: 400 });
@@ -86,11 +86,11 @@ export async function POST(req) {
 
     let query, params;
     if (type === 'schedule') {
-      query = 'INSERT INTO schedules (account, date, title, description, start_time, end_time, day_of_week) VALUES (?, ?, ?, ?, ?, ?, ?)';
-      params = [tokenValidation.account, date, title, description, start_time, end_time, day_of_week];
+      query = 'INSERT INTO schedules (account, date, title, description, start_time, end_time, day_of_week, classroom) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+      params = [tokenValidation.account, date, title, description, start_time, end_time, day_of_week, classroom];  // 添加 classroom
     } else if (type === 'event') {
-      query = 'INSERT INTO events (account, date, title, description, start_time, end_time) VALUES (?, ?, ?, ?, ?, ?)';
-      params = [tokenValidation.account, date, title, description, start_time, end_time];
+      query = 'INSERT INTO events (account, date, title, description, start_time, end_time, classroom) VALUES (?, ?, ?, ?, ?, ?, ?)';
+      params = [tokenValidation.account, date, title, description, start_time, end_time, classroom];
     } else {
       return NextResponse.json({ error: "無效的類型" }, { status: 400 });
     }
@@ -131,11 +131,11 @@ export async function PUT(req) {
 
     let query, params;
     if (type === 'schedule') {
-      query = 'UPDATE schedules SET date = ?, title = ?, description = ?, start_time = ?, end_time = ?, day_of_week = ? WHERE id = ? AND account = ?';
-      params = [date, title, description, start_time, end_time, day_of_week, id, tokenValidation.account];
+      query = 'UPDATE schedules SET date = ?, title = ?, description = ?, start_time = ?, end_time = ?, day_of_week = ?,classroom =? WHERE id = ? AND account = ?';
+      params = [date, title, description, start_time, end_time, day_of_week,classroom, id, tokenValidation.account];
     } else if (type === 'event') {
-      query = 'UPDATE events SET date = ?, title = ?, description = ?, start_time = ?, end_time = ? WHERE id = ? AND account = ?';
-      params = [date, title, description, start_time, end_time, id, tokenValidation.account];
+      query = 'UPDATE events SET date = ?, title = ?, description = ?, start_time = ?, end_time = ?,classroom =? WHERE id = ? AND account = ?';
+      params = [date, title, description, start_time, end_time,classroom , id, tokenValidation.account];
     } else {
       return NextResponse.json({ error: "無效的類型" }, { status: 400 });
     }
