@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
+import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,14 +18,53 @@ import { Edit, Trash } from 'lucide-react';
 import { format } from 'date-fns';
 
 const Page = () => {
+  const router = useRouter();
+  // 1. 先定義所有的 state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const router = useRouter();
+  const [username, setUsername] = useState(null);
+  const [isAddingOpen, setIsAddingOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentCourse, setCurrentCourse] = useState(null);
+  const [schedule, setSchedule] = useState({});
+  const [message, setMessage] = useState(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState(null);
+  const weekdays = ['週一', '週二', '週三', '週四', '週五'];
+  const timeSlots = [
+    '08:00-08:50',
+    '08:55-09:45',
+    '09:55-10:45',
+    '10:50-11:40',
+    '11:50-12:40',
+    '12:45-13:35',
+    '13:40-14:30',
+    '14:40-15:30',
+    '15:35-16:25'
+  ];
+
+  const getDayOfWeek = (day) => {
+    return weekdays.indexOf(day) + 1;
+  };
+
+  
 
   useEffect(() => {
+    const initializeData = async () => {
+      try {
+        const userResponse = await fetch('/api/user');
+        if (userResponse.ok) {
+          const userData = await userResponse.json();
+          setUsername(userData.username);
+        }
+        await fetchCourses();
+      } catch (err) {
+        console.error('初始化數據錯誤:', err);
+        showMessage("錯誤", "獲取數據失敗", true);
+      }
+    };
+    initializeData();
     checkLoginStatus();
   }, []);
-
   const checkLoginStatus = async () => {
     try {
       const response = await fetch('/api/user', {
@@ -48,56 +87,6 @@ const Page = () => {
       setIsLoading(false);
     }
   };
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
-  if (!isLoggedIn) {
-    return null;
-  }
-  const weekdays = ['週一', '週二', '週三', '週四', '週五'];
-  const timeSlots = [
-    '08:00-08:50',
-    '08:55-09:45',
-    '09:55-10:45',
-    '10:50-11:40',
-    '11:50-12:40',
-    '12:45-13:35',
-    '13:40-14:30',
-    '14:40-15:30',
-    '15:35-16:25'
-  ];
-
-  const getDayOfWeek = (day) => {
-    return weekdays.indexOf(day) + 1;
-  };
-
-  const [username, setUsername] = useState(null);
-  const [isAddingOpen, setIsAddingOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [currentCourse, setCurrentCourse] = useState(null);
-  const [schedule, setSchedule] = useState({});
-  const [message, setMessage] = useState(null);
-  const [deleteConfirmation, setDeleteConfirmation] = useState(null);
-
-  useEffect(() => {
-    const initializeData = async () => {
-      try {
-        const userResponse = await fetch('/api/user');
-        if (userResponse.ok) {
-          const userData = await userResponse.json();
-          setUsername(userData.username);
-        }
-        await fetchCourses();
-      } catch (err) {
-        console.error('初始化數據錯誤:', err);
-        showMessage("錯誤", "獲取數據失敗", true);
-      }
-    };
-    initializeData();
-  }, []);
-
   const fetchCourses = async () => {
     try {
       const today = new Date();
@@ -390,7 +379,7 @@ const Page = () => {
           <DialogHeader>
             <DialogTitle>確認刪除</DialogTitle>
           </DialogHeader>
-          <DialogDescription>
+         <DialogDescription>
   確定要刪除課程「{deleteConfirmation?.courseName}」嗎？此操作無法撤銷。
 </DialogDescription>
           <DialogFooter>
