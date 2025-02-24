@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from "@/components/ui/input";
@@ -17,6 +18,44 @@ import { Edit, Trash } from 'lucide-react';
 import { format } from 'date-fns';
 
 const Page = () => {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    checkLoginStatus();
+  }, []);
+
+  const checkLoginStatus = async () => {
+    try {
+      const response = await fetch('/api/user', {
+        method: 'GET',
+        credentials: 'include',
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setIsLoggedIn(!!data.username);
+      } else {
+        setIsLoggedIn(false);
+        router.push('/login');
+      }
+    } catch (error) {
+      console.error('Error checking login status:', error);
+      setIsLoggedIn(false);
+      router.push('/login');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!isLoggedIn) {
+    return null;
+  }
   const weekdays = ['週一', '週二', '週三', '週四', '週五'];
   const timeSlots = [
     '08:00-08:50',
