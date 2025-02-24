@@ -21,7 +21,7 @@ const LoginPage = () => {
   const handleLogin = async (account, password) => {
     setError('');
     setLoading(true);
-
+  
     try {
       const res = await fetch('/api/login', {
         method: 'POST',
@@ -30,21 +30,22 @@ const LoginPage = () => {
         },
         body: JSON.stringify({ account, password }),
       });
-
+  
       const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || `登入失敗。狀態碼: ${res.status}`);
-      }
-
-      if (data.message === '登錄成功') {
+      console.log('Login response data:', data);
+  
+      // 檢查登入成功的消息
+      if (data.message === '登錄成功!' || data.message === '登錄成功') {
         toast.success('登入成功！');
         setTimeout(() => {
-          window.location.href = '/home';
+          window.location.href = '/';
         }, 1500);
-      } else {
-        throw new Error(data.error || '登入失敗。請稍後再試!。');
+        return;
       }
+  
+      // 如果沒有成功消息，則拋出錯誤
+      throw new Error(data.error || '登入失敗，請稍後再試');
+  
     } catch (error) {
       console.error('Login error:', error);
       setError(error.message);
