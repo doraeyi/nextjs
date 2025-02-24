@@ -352,8 +352,8 @@ const Page = () => {
             <DialogTitle>確認刪除</DialogTitle>
           </DialogHeader>
           <DialogDescription>
-            確定要刪除課程 "{deleteConfirmation?.courseName}" 嗎？此操作無法撤銷。
-          </DialogDescription>
+  確定要刪除課程「{deleteConfirmation?.courseName}」嗎？此操作無法撤銷。
+</DialogDescription>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteConfirmation(null)}>取消</Button>
             <Button variant="destructive" onClick={confirmDelete}>確認刪除</Button>
