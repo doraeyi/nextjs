@@ -5,13 +5,15 @@ import { useTheme } from 'next-themes';
 import { 
   Home, Info, Calendar, Settings, Loader, UserCircle, 
   XIcon, BookOpen, Camera, Music, ChevronRight, Plus,
-  ImageIcon, Pencil, Bookmark, GraduationCap
+  ImageIcon, Pencil
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
+import { format, getDay } from 'date-fns';
+import { zhTW } from 'date-fns/locale';
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // NavItem Component
 const NavItem = ({ href, Icon, text, onClick, isActive }) => (
@@ -29,227 +31,49 @@ const NavItem = ({ href, Icon, text, onClick, isActive }) => (
   </Link>
 );
 
-// 學分進度條組件
-const ProgressBar = ({ current, total, color }) => {
-  const percentage = Math.min(Math.round((current / total) * 100), 100);
-  
-  return (
-    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 mb-1">
-      <div 
-        className={`h-4 rounded-full ${color}`}
-        style={{ width: `${percentage}%` }}
-      ></div>
-      <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400">
-        <span>{current} / {total} 學分</span>
-        <span>{percentage}%</span>
-      </div>
-    </div>
-  );
-};
-
-// SemesterCard 組件
-const SemesterCard = ({ semester, credits }) => {
-  return (
-    <div className="mb-4 p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
-      <h3 className="font-bold text-lg mb-2">{semester}</h3>
-      
-      <div className="space-y-4 mt-3">
-        <div>
-          <h4 className="font-medium mb-1">必修課程</h4>
-          <ProgressBar 
-            current={credits.required.current} 
-            total={credits.required.total} 
-            color="bg-blue-500" 
-          />
-        </div>
-        
-        <div>
-          <h4 className="font-medium mb-1">選修課程</h4>
-          <ProgressBar 
-            current={credits.elective.current} 
-            total={credits.elective.total} 
-            color="bg-green-500" 
-          />
-        </div>
-        
-        <div>
-          <h4 className="font-medium mb-1">通識課程</h4>
-          <ProgressBar 
-            current={credits.general.current} 
-            total={credits.general.total} 
-            color="bg-purple-500" 
-          />
-        </div>
-        
-        <div className="pt-2 border-t dark:border-gray-700">
-          <h4 className="font-medium mb-1">總學分</h4>
-          <ProgressBar 
-            current={
-              credits.required.current + 
-              credits.elective.current + 
-              credits.general.current
-            } 
-            total={
-              credits.required.total + 
-              credits.elective.total + 
-              credits.general.total
-            } 
-            color="bg-yellow-500" 
-          />
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// MenuContent Component - 學分追蹤器
-const MenuContent = () => {
-  const [selectedYear, setSelectedYear] = useState('all');
+// MenuContent Component
+const MenuContent = ({ items, activeMenu, onClose }) => {
+  const [date, setDate] = useState(new Date());
   const [message, setMessage] = useState(null);
-
-  // 模擬學分數據
-  const creditData = {
-    '111-1': {
-      required: { current: 12, total: 15 },
-      elective: { current: 6, total: 9 },
-      general: { current: 4, total: 6 },
-    },
-    '111-2': {
-      required: { current: 14, total: 15 },
-      elective: { current: 8, total: 9 },
-      general: { current: 5, total: 6 },
-    },
-    '112-1': {
-      required: { current: 10, total: 15 },
-      elective: { current: 7, total: 9 },
-      general: { current: 3, total: 6 },
-    },
-    '112-2': {
-      required: { current: 8, total: 15 },
-      elective: { current: 4, total: 9 },
-      general: { current: 2, total: 6 },
-    }
-  };
-  
-  // 計算總學分
-  const calculateTotal = () => {
-    let requiredCurrent = 0, requiredTotal = 0;
-    let electiveCurrent = 0, electiveTotal = 0;
-    let generalCurrent = 0, generalTotal = 0;
-    
-    Object.values(creditData).forEach(semesterData => {
-      requiredCurrent += semesterData.required.current;
-      requiredTotal += semesterData.required.total;
-      electiveCurrent += semesterData.elective.current;
-      electiveTotal += semesterData.elective.total;
-      generalCurrent += semesterData.general.current;
-      generalTotal += semesterData.general.total;
-    });
-    
-    return {
-      required: { current: requiredCurrent, total: requiredTotal },
-      elective: { current: electiveCurrent, total: electiveTotal },
-      general: { current: generalCurrent, total: generalTotal }
-    };
-  };
 
   const showMessage = (title, description, isError = false) => {
     setMessage({ title, description, isError });
     setTimeout(() => setMessage(null), 5000);
   };
 
-  // 過濾要顯示的學期
-  const getSemestersToShow = () => {
-    if (selectedYear === 'all') {
-      // 如果選了 'all'，返回所有學期
-      return Object.entries(creditData).map(([semester, credits]) => (
-        <SemesterCard key={semester} semester={semester} credits={credits} />
-      ));
-    } else {
-      // 過濾出指定學年的學期
-      return Object.entries(creditData)
-        .filter(([semester]) => semester.startsWith(selectedYear))
-        .map(([semester, credits]) => (
-          <SemesterCard key={semester} semester={semester} credits={credits} />
-        ));
-    }
-  };
-
   return (
-    <div className="p-4 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-full">
+    <div className="p-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
       {message && (
         <div className={`fixed top-4 right-4 p-4 rounded-md ${message.isError ? 'bg-red-500' : 'bg-green-500'} text-white`}>
           <h3 className="font-bold">{message.title}</h3>
           <p>{message.description}</p>
         </div>
       )}
+      <CalendarComponent
+        mode="single"
+        selected={date}
+        onSelect={(newDate) => {
+          if (newDate) {
+            setDate(newDate);
+          }
+        }}
+        className="rounded-md border"
+      />
       
-      <div className="mb-6">
-        <h2 className="text-xl font-bold mb-4 flex items-center">
-          <GraduationCap className="mr-2 h-6 w-6" />
-          學分追蹤
-        </h2>
-        
-        <div className="mb-4">
-          <Select value={selectedYear} onValueChange={setSelectedYear}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="選擇學年" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">全部學期</SelectItem>
-              <SelectItem value="111">111學年</SelectItem>
-              <SelectItem value="112">112學年</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
-        {/* 總覽卡片 */}
-        {selectedYear === 'all' && (
-          <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg shadow">
-            <h3 className="font-bold text-lg mb-2 text-blue-800 dark:text-blue-300">學分總覽</h3>
-            <div className="space-y-4">
-              <ProgressBar 
-                current={Object.values(calculateTotal()).reduce((sum, type) => sum + type.current, 0)} 
-                total={Object.values(calculateTotal()).reduce((sum, type) => sum + type.total, 0)} 
-                color="bg-blue-600" 
-              />
-              
-              <div className="grid grid-cols-3 gap-2 text-center text-sm">
-                <div className="p-2 bg-blue-100 dark:bg-blue-800/30 rounded">
-                  <p className="font-medium">必修</p>
-                  <p>{calculateTotal().required.current}/{calculateTotal().required.total}</p>
-                </div>
-                <div className="p-2 bg-green-100 dark:bg-green-800/30 rounded">
-                  <p className="font-medium">選修</p>
-                  <p>{calculateTotal().elective.current}/{calculateTotal().elective.total}</p>
-                </div>
-                <div className="p-2 bg-purple-100 dark:bg-purple-800/30 rounded">
-                  <p className="font-medium">通識</p>
-                  <p>{calculateTotal().general.current}/{calculateTotal().general.total}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {/* 各學期學分卡片 */}
-        <div>
-          <h3 className="font-bold text-lg mb-3">
-            {selectedYear === 'all' ? '各學期學分' : `${selectedYear}學年學分`}
-          </h3>
-          {getSemestersToShow()}
-        </div>
+      {/* 您可以在這裡添加其他内容，例如日期显示 */}
+      <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-md">
+        <h3 className="text-lg font-semibold">
+          {format(date, 'yyyy年M月d日 EEEE', { locale: zhTW })}
+        </h3>
+        <p className="text-gray-500 dark:text-gray-400 mt-1">
+          選擇日期來查看您的行程
+        </p>
       </div>
       
-      {/* 額外功能按鈕 */}
-      <div className="mt-6 flex gap-2">
-        <Button className="flex-1 bg-blue-500 hover:bg-blue-600">
-          <BookOpen className="mr-2 h-4 w-4" />
-          查看課程清單
-        </Button>
-        <Button className="flex-1 bg-green-500 hover:bg-green-600">
-          <Plus className="mr-2 h-4 w-4" />
-          添加修課記錄
+      {/* 替代按鈕，如果需要的話 */}
+      <div className="mt-4">
+        <Button onClick={() => window.location.href = '/calendar'} className="w-full">
+          前往行事曆頁面
         </Button>
       </div>
     </div>
@@ -258,23 +82,23 @@ const MenuContent = () => {
 
 // SlideOutMenu Component
 const SlideOutMenu = ({ isOpen, onClose, activeMenu }) => {
-  const creditItems = [
+  const calendarItems = [
     { 
-      icon: GraduationCap, 
-      text: '學分總覽', 
-      href: '/credit/overview',
+      icon: Info, 
+      text: '每日事項', 
+      href: '/calendar/daily',
       color: 'text-blue-500'
     },
     { 
-      icon: BookOpen, 
-      text: '課程清單', 
-      href: '/credit/courses',
+      icon: Calendar, 
+      text: '月曆總覽', 
+      href: '/calendar/monthly',
       color: 'text-green-500'
     },
     {
       icon: Plus,
-      text: '添加課程',
-      href: '/credit/add',
+      text: '新增事項',
+      href: '/calendar/new',
       color: 'text-purple-500'
     }
   ];
@@ -300,7 +124,7 @@ const SlideOutMenu = ({ isOpen, onClose, activeMenu }) => {
     }
   ];
 
-  const menuItems = activeMenu === 'credit' ? creditItems : readingItems;
+  const menuItems = activeMenu === 'calendar' ? calendarItems : readingItems;
 
   return (
     <>
@@ -321,7 +145,7 @@ const SlideOutMenu = ({ isOpen, onClose, activeMenu }) => {
         >
           <div className="sticky top-0 z-10 px-4 py-3 flex items-center justify-between border-b dark:border-gray-700 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
             <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
-              {activeMenu === 'credit' ? '學分追蹤' : '快速功能'}
+              {activeMenu === 'calendar' ? '行事曆' : '快速功能'}
             </h2>
             <button 
               onClick={onClose}
@@ -345,7 +169,7 @@ const SlideOutMenu = ({ isOpen, onClose, activeMenu }) => {
           <div className="p-4 border-b dark:border-gray-700">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
-                {activeMenu === 'credit' ? '學分追蹤' : '快速功能'}
+                {activeMenu === 'calendar' ? '行事曆' : '快速功能'}
               </h2>
               <button 
                 onClick={onClose}
@@ -509,10 +333,10 @@ const BottomNav = () => {
               )}
               <NavItem 
                 href="#" 
-                Icon={GraduationCap} 
-                text="學分" 
-                onClick={() => handleNavItemClick('credit')}
-                isActive={activeMenu === 'credit' && isMenuOpen}
+                Icon={Calendar} 
+                text="行事曆" 
+                onClick={() => handleNavItemClick('calendar')}
+                isActive={activeMenu === 'calendar' && isMenuOpen}
               />
             </div>
           </div>
