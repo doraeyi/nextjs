@@ -128,7 +128,8 @@ const Page = () => {
       formattedSchedule[key] = {
         id: schedule.id,
         name: schedule.title,
-        room: schedule.classroom || '',
+        room: schedule.classroom || '', // 從 API 獲取的是 classroom
+        classroom: schedule.classroom || '', // 同時保存 classroom 字段原始值
         description: schedule.description,
         start_time: schedule.start_time,
         end_time: schedule.end_time,
@@ -150,16 +151,19 @@ const Page = () => {
     const dayOfWeek = getDayOfWeek(formData.get('day'));
     const [startTime, endTime] = formData.get('time').split('-');
     
+    // 創建課程數據對象
     const courseData = {
       type: 'schedule',
       title: formData.get('title'),
       description: formData.get('description') || '',
-      classroom: formData.get('room'),
+      classroom: formData.get('room'), // 確保 API 需要的是 classroom 字段
       day_of_week: dayOfWeek,
       start_time: `${startTime}:00`,  // 添加秒數
       end_time: `${endTime}:00`,      // 添加秒數
       date: format(activeDay === "today" ? new Date() : addDays(new Date(), 1), 'yyyy-MM-dd')
     };
+    
+    console.log('Prepared course data:', courseData); // 用於調試
   
     try {
       console.log('Sending data:', courseData);  // 調試用
@@ -232,7 +236,7 @@ const Page = () => {
       ...course,
       day,
       time: `${course.start_time.slice(0, 5)}-${course.end_time.slice(0, 5)}`,
-      room: course.room
+      room: course.room || course.classroom // 確保從正確的屬性讀取教室資訊
     });
     setIsEditing(true);
     setIsAddingOpen(true);
