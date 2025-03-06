@@ -19,7 +19,6 @@ import { format, addDays } from 'date-fns';
 
 const Page = () => {
   const router = useRouter();
-  // 1. 先定義所有的 state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [username, setUsername] = useState(null);
@@ -28,24 +27,23 @@ const Page = () => {
   const [currentCourse, setCurrentCourse] = useState(null);
   const [todaySchedule, setTodaySchedule] = useState({});
   const [tomorrowSchedule, setTomorrowSchedule] = useState({});
-  const [activeDay, setActiveDay] = useState("today"); // 今天或明天
+  const [activeDay, setActiveDay] = useState("today"); 
   const [message, setMessage] = useState(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState(null);
   
-  // 產生從 113-1 開始的五年學期列表
-  const generateSemesterList = () => {
-    const semesters = [];
-    for (let year = 113; year <= 117; year++) {
-      semesters.push(`${year}-1`); // 第一學期
-      semesters.push(`${year}-2`); // 第二學期
-    }
-    return semesters;
-  };
+  // 手動設定學期列表
+  const semesterList = [
+    "113-1", "113-2", 
+    "114-1", "114-2", 
+    "115-1", "115-2", 
+    "116-1", "116-2", 
+    "117-1", "117-2"
+  ];
   
-  const [semesters, setSemesters] = useState(generateSemesterList()); // 預設學期列表
-  const [activeSemester, setActiveSemester] = useState(null); // 當前選擇的學期
-  const [selectedTimeSlots, setSelectedTimeSlots] = useState([]); // 選定的時間段
-  const [existingCourses, setExistingCourses] = useState([]); // 現有課程列表（從資料庫獲取）
+  const [semesters, setSemesters] = useState(semesterList);
+  const [activeSemester, setActiveSemester] = useState("113-1");
+  const [selectedTimeSlots, setSelectedTimeSlots] = useState([]);
+  const [existingCourses, setExistingCourses] = useState([]);
   
   const weekdays = ['週一', '週二', '週三', '週四', '週五'];
   const timeSlots = [
@@ -64,7 +62,7 @@ const Page = () => {
     return weekdays.indexOf(day) + 1;
   };
 
-  // 判斷課程類型的輔助函數（與後端保持一致）
+  // 判斷課程類型的輔助函數
   const determineCourseType = (title) => {
     const requiredCourses = ['國文', '英文', '數學', '物理', '化學', '歷史', '地理'];
     if (requiredCourses.includes(title)) {
@@ -80,22 +78,7 @@ const Page = () => {
         if (userResponse.ok) {
           const userData = await userResponse.json();
           setUsername(userData.username);
-          
-          // 設置默認學期，如果當前月份是 1-7 月，使用上一年第二學期，否則使用當年第一學期
-          const now = new Date();
-          const currentYear = now.getFullYear() - 1911; // 轉換為民國年
-          const currentMonth = now.getMonth() + 1; // JavaScript 月份從 0 開始
-          
-          let defaultSemester;
-          if (currentMonth >= 1 && currentMonth <= 7) {
-            // 1-7月是第二學期
-            defaultSemester = `${currentYear - 1}-2`;
-          } else {
-            // 8-12月是第一學期
-            defaultSemester = `${currentYear}-1`;
-          }
-          
-          setActiveSemester(defaultSemester);
+          setActiveSemester("113-1"); // 預設使用 113-1 學期
         }
       } catch (err) {
         console.error('初始化數據錯誤:', err);
@@ -110,7 +93,7 @@ const Page = () => {
   useEffect(() => {
     if (activeSemester) {
       fetchCourses();
-      fetchExistingCourses(); // 獲取已存在的課程名稱列表
+      fetchExistingCourses();
     }
   }, [activeSemester]);
 
@@ -140,7 +123,6 @@ const Page = () => {
   // 獲取資料庫中已存在的課程名稱
   const fetchExistingCourses = async () => {
     try {
-      // 從課表API獲取所有課程
       const response = await fetch(`/api/schedule-event?semester=${activeSemester}`);
       if (!response.ok) throw new Error('獲取課程列表失敗');
       
@@ -180,25 +162,6 @@ const Page = () => {
       // 處理明天的課程資料
       const formattedTomorrowSchedule = formatScheduleData(tomorrowData.schedules || []);
       setTomorrowSchedule(formattedTomorrowSchedule);
-      
-      // 使用API返回的學期信息更新学期列表
-      if (todayData.debug && todayData.debug.semestersInDb && todayData.debug.semestersInDb.length > 0) {
-        // 只在資料庫有學期數據時才更新列表
-        const dbSemesters = todayData.debug.semestersInDb.filter(s => s);
-        if (dbSemesters.length > 0) {
-          setSemesters(prevSemesters => {
-            // 合併現有學期和資料庫學期，確保不重複
-            const mergedSemesters = [...new Set([...prevSemesters, ...dbSemesters])];
-            // 按照學年學期排序
-            return mergedSemesters.sort((a, b) => {
-              const [yearA, semA] = a.split('-').map(Number);
-              const [yearB, semB] = b.split('-').map(Number);
-              if (yearA !== yearB) return yearA - yearB;
-              return semA - semB;
-            });
-          });
-        }
-      }
     } catch (error) {
       console.error('獲取課程錯誤:', error);
       showMessage("錯誤", "獲取課程失敗", true);
@@ -221,15 +184,15 @@ const Page = () => {
       formattedSchedule[key] = {
         id: schedule.id,
         name: schedule.title,
-        room: schedule.classroom || '', // 從 API 獲取的是 classroom
-        classroom: schedule.classroom || '', // 同時保存 classroom 字段原始值
+        room: schedule.classroom || '',
+        classroom: schedule.classroom || '',
         description: schedule.description,
         start_time: schedule.start_time,
         end_time: schedule.end_time,
         day_of_week: schedule.day_of_week,
-        semester: schedule.semester, // 保存學期信息
-        credits: schedule.credits, // 保存學分信息
-        course_type: schedule.course_type // 保存課程類型
+        semester: schedule.semester,
+        credits: schedule.credits,
+        course_type: schedule.course_type
       };
     });
     return formattedSchedule;
@@ -274,17 +237,17 @@ const Page = () => {
           type: 'schedule',
           title: title,
           description: formData.get('description') || '',
-          classroom: formData.get('room'), // 確保 API 需要的是 classroom 字段
+          classroom: formData.get('room'),
           day_of_week: dayOfWeek,
-          start_time: `${startTime}:00`,  // 添加秒數
-          end_time: `${endTime}:00`,      // 添加秒數
+          start_time: `${startTime}:00`,
+          end_time: `${endTime}:00`,
           date: format(activeDay === "today" ? new Date() : addDays(new Date(), 1), 'yyyy-MM-dd'),
-          semester: formData.get('semester') || activeSemester, // 使用表單的學期，如果沒有則使用當前選中的學期
-          credits: formData.get('credits') ? parseInt(formData.get('credits')) : null, // 添加學分欄位
-          course_type: determineCourseType(title) // 自動判斷課程類型
+          semester: formData.get('semester') || activeSemester,
+          credits: formData.get('credits') ? parseInt(formData.get('credits')) : null,
+          course_type: determineCourseType(title)
         };
         
-        console.log('Prepared course data:', courseData); // 用於調試
+        console.log('Prepared course data:', courseData);
       
         const method = isEditing ? 'PUT' : 'POST';
         const body = {
@@ -308,12 +271,12 @@ const Page = () => {
       
       // 所有時間段都添加完成後，刷新課表並關閉對話框
       await fetchCourses();
-      await fetchExistingCourses(); // 更新課程列表
+      await fetchExistingCourses();
       showMessage("成功", `${isEditing ? '更新' : '添加'}課程成功`);
       setIsAddingOpen(false);
       setIsEditing(false);
       setCurrentCourse(null);
-      setSelectedTimeSlots([]); // 清空選定的時間段
+      setSelectedTimeSlots([]);
     } catch (error) {
       console.error('保存課程錯誤:', error);
       showMessage("錯誤", `${isEditing ? '更新' : '添加'}課程失敗: ${error.message}`, true);
@@ -342,7 +305,7 @@ const Page = () => {
       if (!response.ok) throw new Error('刪除課程失敗');
       
       await fetchCourses();
-      await fetchExistingCourses(); // 更新課程列表
+      await fetchExistingCourses();
       showMessage("成功", "課程已刪除");
       setDeleteConfirmation(null);
     } catch (error) {
@@ -356,24 +319,21 @@ const Page = () => {
     const key = `${day}-${time}`;
     const course = schedule[key];
     
-    // 設置當前編輯的課程
     setCurrentCourse({
       ...course,
       day,
       time: `${course.start_time.slice(0, 5)}-${course.end_time.slice(0, 5)}`,
-      room: course.room || course.classroom, // 確保從正確的屬性讀取教室資訊
-      semester: course.semester, // 保存學期信息
-      credits: course.credits // 保存學分信息
+      room: course.room || course.classroom,
+      semester: course.semester,
+      credits: course.credits
     });
     
-    // 設置選中的時間段
     setSelectedTimeSlots([`${course.start_time.slice(0, 5)}-${course.end_time.slice(0, 5)}`]);
     
     setIsEditing(true);
     setIsAddingOpen(true);
   };
 
-  // 打開添加課程對話框時重置狀態
   const openAddCourseDialog = () => {
     setIsEditing(false);
     setCurrentCourse(null);
@@ -381,14 +341,12 @@ const Page = () => {
     setIsAddingOpen(true);
   };
 
-  // 根據活動標籤顯示對應的課表
   const displaySchedule = activeDay === "today" ? todaySchedule : tomorrowSchedule;
   const today = new Date();
   const tomorrow = addDays(today, 1);
   const todayLabel = `今天 (${format(today, 'MM/dd')})`;
   const tomorrowLabel = `明天 (${format(tomorrow, 'MM/dd')})`;
 
-  // 生成課程類型的名稱
   const getCourseTypeName = (type) => {
     switch(type) {
       case 1: return '必修';
@@ -397,6 +355,10 @@ const Page = () => {
       default: return '其他';
     }
   };
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="container p-0">
@@ -427,7 +389,7 @@ const Page = () => {
           <SelectTrigger className="w-32">
             <SelectValue placeholder="選擇學期" />
           </SelectTrigger>
-          <SelectContent className="max-h-60 overflow-y-auto">
+          <SelectContent>
             {semesters.map(semester => (
               <SelectItem key={semester} value={semester}>{semester}</SelectItem>
             ))}
@@ -582,7 +544,7 @@ const Page = () => {
                   <SelectTrigger className="col-span-3">
                     <SelectValue placeholder="選擇學期" />
                   </SelectTrigger>
-                  <SelectContent className="max-h-60 overflow-y-auto">
+                  <SelectContent>
                     {semesters.map(semester => (
                       <SelectItem key={semester} value={semester}>
                         {semester}
@@ -636,7 +598,7 @@ const Page = () => {
                         className="justify-start px-2 py-1 h-8"
                         onClick={() => handleTimeSlotChange(timeSlot)}
                       >
-                        {isSelected && <Check className="mr-2 h-3 w-3" />}
+                        {isSelected && <Check className="mr-2 h-3 w-4" />}
                         <span className="text-xs">{timeSlot}</span>
                       </Button>
                     );
