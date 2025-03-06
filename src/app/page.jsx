@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Edit, Trash } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 
 const Page = () => {
   const router = useRouter();
@@ -26,7 +26,9 @@ const Page = () => {
   const [isAddingOpen, setIsAddingOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentCourse, setCurrentCourse] = useState(null);
-  const [schedule, setSchedule] = useState({});
+  const [todaySchedule, setTodaySchedule] = useState({});
+  const [tomorrowSchedule, setTomorrowSchedule] = useState({});
+  const [activeDay, setActiveDay] = useState("today"); // 今天或明天
   const [message, setMessage] = useState(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState(null);
   const weekdays = ['週一', '週二', '週三', '週四', '週五'];
@@ -46,8 +48,6 @@ const Page = () => {
     return weekdays.indexOf(day) + 1;
   };
 
-  
-
   useEffect(() => {
     const initializeData = async () => {
       try {
@@ -65,6 +65,7 @@ const Page = () => {
     initializeData();
     checkLoginStatus();
   }, []);
+
   const checkLoginStatus = async () => {
     try {
       const response = await fetch('/api/user', {
@@ -87,38 +88,54 @@ const Page = () => {
       setIsLoading(false);
     }
   };
+
   const fetchCourses = async () => {
     try {
       const today = new Date();
-      const response = await fetch(`/api/schedule-event?date=${format(today, 'yyyy-MM-dd')}`);
-      if (!response.ok) throw new Error('獲取課程失敗');
-      const data = await response.json();
+      const tomorrow = addDays(today, 1);
       
-      const formattedSchedule = {};
-      if (data.schedules) {
-        data.schedules.forEach(schedule => {
-          const dayIndex = schedule.day_of_week - 1;
-          const day = weekdays[dayIndex];
-          const timeKey = `${schedule.start_time.slice(0, 5)}-${schedule.end_time.slice(0, 5)}`;
-          const key = `${day}-${timeKey}`;
-          
-          formattedSchedule[key] = {
-            id: schedule.id,
-            name: schedule.title,
-            room: schedule.classroom || '', // 改用 classroom
-            description: schedule.description,
-            start_time: schedule.start_time,
-            end_time: schedule.end_time,
-            day_of_week: schedule.day_of_week
-          };
-        });
-      }
+      // 獲取今天的課程
+      const todayResponse = await fetch(`/api/schedule-event?date=${format(today, 'yyyy-MM-dd')}`);
+      if (!todayResponse.ok) throw new Error('獲取今天課程失敗');
+      const todayData = await todayResponse.json();
       
-      setSchedule(formattedSchedule);
+      // 獲取明天的課程
+      const tomorrowResponse = await fetch(`/api/schedule-event?date=${format(tomorrow, 'yyyy-MM-dd')}`);
+      if (!tomorrowResponse.ok) throw new Error('獲取明天課程失敗');
+      const tomorrowData = await tomorrowResponse.json();
+      
+      // 處理今天的課程資料
+      const formattedTodaySchedule = formatScheduleData(todayData.schedules || []);
+      setTodaySchedule(formattedTodaySchedule);
+      
+      // 處理明天的課程資料
+      const formattedTomorrowSchedule = formatScheduleData(tomorrowData.schedules || []);
+      setTomorrowSchedule(formattedTomorrowSchedule);
     } catch (error) {
       console.error('獲取課程錯誤:', error);
       showMessage("錯誤", "獲取課程失敗", true);
     }
+  };
+
+  const formatScheduleData = (schedules) => {
+    const formattedSchedule = {};
+    schedules.forEach(schedule => {
+      const dayIndex = schedule.day_of_week - 1;
+      const day = weekdays[dayIndex];
+      const timeKey = `${schedule.start_time.slice(0, 5)}-${schedule.end_time.slice(0, 5)}`;
+      const key = `${day}-${timeKey}`;
+      
+      formattedSchedule[key] = {
+        id: schedule.id,
+        name: schedule.title,
+        room: schedule.classroom || '',
+        description: schedule.description,
+        start_time: schedule.start_time,
+        end_time: schedule.end_time,
+        day_of_week: schedule.day_of_week
+      };
+    });
+    return formattedSchedule;
   };
 
   const showMessage = (title, description, isError = false) => {
@@ -141,7 +158,7 @@ const Page = () => {
       day_of_week: dayOfWeek,
       start_time: `${startTime}:00`,  // 添加秒數
       end_time: `${endTime}:00`,      // 添加秒數
-      date: format(new Date(), 'yyyy-MM-dd')
+      date: format(activeDay === "today" ? new Date() : addDays(new Date(), 1), 'yyyy-MM-dd')
     };
   
     try {
@@ -178,6 +195,7 @@ const Page = () => {
   };
 
   const handleDelete = (day, time) => {
+    const schedule = activeDay === "today" ? todaySchedule : tomorrowSchedule;
     const key = `${day}-${time}`;
     setDeleteConfirmation({ 
       key, 
@@ -207,22 +225,30 @@ const Page = () => {
   };
 
   const handleEdit = (day, time) => {
+    const schedule = activeDay === "today" ? todaySchedule : tomorrowSchedule;
     const key = `${day}-${time}`;
     const course = schedule[key];
     setCurrentCourse({
       ...course,
       day,
       time: `${course.start_time.slice(0, 5)}-${course.end_time.slice(0, 5)}`,
-      room: course.classroom // 確保編輯時顯示正確的教室資訊
+      room: course.room
     });
     setIsEditing(true);
     setIsAddingOpen(true);
   };
 
+  // 根據活動標籤顯示對應的課表
+  const displaySchedule = activeDay === "today" ? todaySchedule : tomorrowSchedule;
+  const today = new Date();
+  const tomorrow = addDays(today, 1);
+  const todayLabel = `今天 (${format(today, 'MM/dd')})`;
+  const tomorrowLabel = `明天 (${format(tomorrow, 'MM/dd')})`;
+
   return (
     <div className="container p-0">
       {message && (
-        <div className={`fixed top-4 right-4  rounded-md ${message.isError ? 'bg-red-500' : 'bg-green-500'} text-white`}>
+        <div className={`fixed top-4 right-4 p-4 rounded-md ${message.isError ? 'bg-red-500' : 'bg-green-500'} text-white`}>
           <h3 className="font-bold">{message.title}</h3>
           <p>{message.description}</p>
         </div>
@@ -239,6 +265,24 @@ const Page = () => {
           className="bg-blue-500 hover:bg-blue-600 text-white"
         >
           添加課程
+        </Button>
+      </div>
+
+      {/* 簡易標籤切換 */}
+      <div className="grid grid-cols-2 gap-2 mb-4 max-w-md mx-auto">
+        <Button 
+          onClick={() => setActiveDay("today")} 
+          variant={activeDay === "today" ? "default" : "outline"}
+          className="w-full"
+        >
+          {todayLabel}
+        </Button>
+        <Button 
+          onClick={() => setActiveDay("tomorrow")} 
+          variant={activeDay === "tomorrow" ? "default" : "outline"}
+          className="w-full"
+        >
+          {tomorrowLabel}
         </Button>
       </div>
 
@@ -263,7 +307,7 @@ const Page = () => {
                       {time}
                     </td>
                     {weekdays.map(day => {
-                      const classInfo = schedule[`${day}-${time}`];
+                      const classInfo = displaySchedule[`${day}-${time}`];
                       return (
                         <td key={`${day}-${time}`} className="p-2 border text-center relative group">
                           {classInfo ? (
@@ -379,9 +423,9 @@ const Page = () => {
           <DialogHeader>
             <DialogTitle>確認刪除</DialogTitle>
           </DialogHeader>
-         <DialogDescription>
-  確定要刪除課程「{deleteConfirmation?.courseName}」嗎？此操作無法撤銷。
-</DialogDescription>
+          <DialogDescription>
+            確定要刪除課程「{deleteConfirmation?.courseName}」嗎？此操作無法撤銷。
+          </DialogDescription>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteConfirmation(null)}>取消</Button>
             <Button variant="destructive" onClick={confirmDelete}>確認刪除</Button>
