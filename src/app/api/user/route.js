@@ -78,6 +78,7 @@ export async function GET(req) {
   }
 }
 
+
 // POST 路由: 更新用戶資料
 export async function POST(request) {
   log('Received POST request to /api/user');
@@ -93,7 +94,13 @@ export async function POST(request) {
   let connection;
   try {
     const body = await request.json();
-    log('Received data:', body);
+    // 安全地記錄數據，不泄露密碼
+    log('Received data:', { 
+      username: body.username, 
+      hasPassword: !!body.newPassword, 
+      passwordLength: body.newPassword ? body.newPassword.length : 0,
+      pic: body.pic ? (typeof body.pic === 'string' ? `${body.pic.substring(0, 15)}...` : '[非字符串]') : undefined
+    });
 
     const { username, newPassword, pic } = body;
 
@@ -103,42 +110,78 @@ export async function POST(request) {
 
     connection = await connectToDatabase();
 
-    let query = 'UPDATE user SET username = ?, pic = ?';
-    let params = [username, pic, tokenValidation.account];
+    // 先檢查用戶是否存在
+    const [userCheck] = await connection.execute(
+      'SELECT account FROM user WHERE account = ?',
+      [tokenValidation.account]
+    );
+    
+    if (userCheck.length === 0) {
+      log('用戶不存在:', tokenValidation.account);
+      return NextResponse.json({ error: '用戶不存在' }, { status: 404 });
+    }
+    
+    log('用戶存在，準備更新資料');
 
-    if (newPassword) {
+    // 分開處理有無密碼更新的情況
+    let query, params;
+    let passwordUpdated = false;
+    
+    // 檢查 newPassword 是否有值且不為空白字符串
+    if (newPassword && newPassword.trim() !== '') {
+      log('檢測到新密碼，長度:', newPassword.length);
+      
       if (newPassword.length < 6) {
-        return NextResponse.json({ error: '密碼長度不足' }, { status: 400 });
+        log('密碼太短，要求至少6個字符');
+        return NextResponse.json({ error: '密碼長度不足，至少需要6個字符' }, { status: 400 });
       }
+      
       const hashedPassword = await bcrypt.hash(newPassword, 10);
-      query += ', password = ?';
-      params.splice(2, 0, hashedPassword);
+      log('密碼已加密，準備更新用戶名、頭像和密碼');
+      
+      query = 'UPDATE user SET username = ?, pic = ?, password = ? WHERE account = ?';
+      params = [username, pic || '', hashedPassword, tokenValidation.account];
+      passwordUpdated = true;
+    } else {
+      log('無新密碼，僅更新用戶名和頭像');
+      query = 'UPDATE user SET username = ?, pic = ? WHERE account = ?';
+      params = [username, pic || '', tokenValidation.account];
     }
 
-    query += ' WHERE account = ?';
-
-    log('Executing query:', { query, params: params.map(p => typeof p === 'string' ? p.substring(0, 10) + '...' : p) });
+    log('執行 SQL 查詢:', { 
+      query, 
+      paramsCount: params.length,
+      firstParam: params[0],
+      lastParam: params[params.length - 1]
+    });
 
     const [result] = await connection.execute(query, params);
-
-    log('Query result:', result);
+    log('查詢結果:', result);
 
     if (result.affectedRows === 0) {
-      log('User not found or no changes made');
+      log('資料未變更或用戶不存在');
       return NextResponse.json({ error: '未找到用戶或資料未變更' }, { status: 404 });
     }
 
-    log('Profile updated successfully');
-    return NextResponse.json({ message: '資料更新成功' }, { status: 200 });
+    log('資料更新成功', { passwordUpdated });
+    return NextResponse.json({ 
+      message: '資料更新成功',
+      passwordUpdated 
+    }, { status: 200 });
   } catch (error) {
-    return handleError(error, "更新用戶資料失敗");
+    log('更新用戶資料失敗', { errorMessage: error.message, stack: error.stack });
+    return NextResponse.json({ 
+      error: "更新用戶資料失敗", 
+      details: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    }, { status: 500 });
   } finally {
     if (connection) {
       await connection.end();
+      log('數據庫連接已關閉');
     }
   }
 }
-
 // PUT 路由: 更新用戶頭像
 export async function PUT(request) {
   log('Received PUT request to /api/user');

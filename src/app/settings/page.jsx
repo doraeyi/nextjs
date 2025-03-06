@@ -100,29 +100,43 @@ const ProfileEdit = () => {
       toast.error('無效的用戶名');
       return;
     }
-
+  
     setIsSaving(true);
+    const data = {
+      username: user.username,
+      newPassword: newPassword,
+      pic: user.pic
+    };
+    
+    // 調試信息
+    console.log('發送的數據:', {
+      ...data,
+      newPassword: newPassword ? '******' : '[空]' // 隱藏實際密碼但顯示是否有值
+    });
+    
     try {
       const response = await fetch('/api/user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: user.username,
-          newPassword: newPassword,
-          pic: user.pic
-        }),
+        body: JSON.stringify(data),
       });
-
+  
+      const result = await response.json();
+      console.log('API 返回結果:', result);
+      
       if (response.ok) {
-        const result = await response.json();
         toast.success(result.message || '資料更新成功');
+        if (result.passwordUpdated) {
+          toast.success('密碼已成功更新');
+        }
         setNewPassword('');
         fetchUserData();
       } else {
-        throw new Error('Failed to update profile');
+        throw new Error(result.error || '更新失敗');
       }
     } catch (error) {
-      toast.error('資料更新失敗');
+      console.error('更新過程中出錯:', error);
+      toast.error(`資料更新失敗: ${error.message}`);
     } finally {
       setIsSaving(false);
     }
