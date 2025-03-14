@@ -96,7 +96,7 @@ const Page = () => {
       } catch (err) {
         console.error('初始化數據錯誤:', err);
         showMessage("錯誤", "獲取數據失敗", true);
-      }
+      } 
     };
     initializeData();
     checkLoginStatus();
