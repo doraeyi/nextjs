@@ -44,7 +44,7 @@ const Page = () => {
   ];
   
   const [semesters, setSemesters] = useState(semesterList);
-  const [activeSemester, setActiveSemester] = useState("113-1");
+  const [activeSemester, setActiveSemester] = useState("113-2");
   const [selectedTimeSlots, setSelectedTimeSlots] = useState([]);
   const [existingCourses, setExistingCourses] = useState([]);
   
@@ -91,7 +91,7 @@ const Page = () => {
         if (userResponse.ok) {
           const userData = await userResponse.json();
           setUsername(userData.username);
-          setActiveSemester("113-1"); // 預設使用 113-1 學期
+          setActiveSemester("113-2"); // 預設使用 113-1 學期
         }
       } catch (err) {
         console.error('初始化數據錯誤:', err);
