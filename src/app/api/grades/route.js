@@ -47,36 +47,35 @@ export async function GET() {
   try {
     connection = await connectToDatabase();
 
-    // 獲取用戶 ID
-    const [users] = await connection.execute(
-      'SELECT id FROM user WHERE account = ?',
-      [tokenValidation.account]
-    );
-
-    if (users.length === 0) {
-      return NextResponse.json({ error: "用戶不存在" }, { status: 404 });
-    }
-
-    const userId = users[0].id;
-
-    // 查詢該用戶的成績
+    // 直接使用 account 查詢成績
     const [grades] = await connection.query(`
       SELECT 
-        grades.id,
-        grades.score,
-        grades.created_at,
-        grades.subjectId,
-        grades.semesterId,
-        subjects.name as subject_name,
-        semesters.name as semester_name
+        id,
+        student_id,
+        student_name,
+        academic_year,
+        term,
+        course_id,
+        course_name,
+        course_category,
+        teacher_name,
+        score_type,
+        score,
+        credits,
+        ranking,
+        total_courses,
+        total_credits,
+        pass_courses,
+        pass_credits,
+        class_rank,
+        average_score,
+        account
       FROM grades
-      LEFT JOIN subjects ON grades.subjectId = subjects.id
-      LEFT JOIN semesters ON grades.semesterId = semesters.id
-      WHERE grades.userId = ?
-      ORDER BY grades.created_at DESC
-    `, [userId]);
+      WHERE account = ?
+      ORDER BY academic_year DESC, term DESC, id DESC
+    `, [tokenValidation.account]);
 
-    log('Fetched grades for user:', { userId, gradesCount: grades.length });
+    log('Fetched grades for account:', { account: tokenValidation.account, gradesCount: grades.length });
     
     return NextResponse.json(grades);
   } catch (error) {
@@ -106,62 +105,74 @@ export async function POST(request) {
 
   let connection;
   try {
-    const { subjectId, semesterId, score } = await request.json();
+    const gradeData = await request.json();
     
     // 驗證必要欄位
-    if (!subjectId || !semesterId || !score) {
+    const requiredFields = [
+      'academic_year', 'term', 'course_id', 'course_name', 
+      'course_category', 'teacher_name', 'score_type', 'score', 'credits'
+    ];
+    
+    const missingFields = requiredFields.filter(field => !gradeData[field]);
+    
+    if (missingFields.length > 0) {
       return NextResponse.json({ 
-        error: '科目、學期和分數都是必填項' 
+        error: `以下欄位為必填: ${missingFields.join(', ')}` 
       }, { status: 400 });
     }
 
     connection = await connectToDatabase();
 
-    // 獲取用戶 ID
+    // 獲取用戶信息
     const [users] = await connection.execute(
-      'SELECT id FROM user WHERE account = ?',
+      'SELECT id, name FROM user WHERE account = ?',
       [tokenValidation.account]
     );
-    
 
     if (users.length === 0) {
       return NextResponse.json({ error: "用戶不存在" }, { status: 404 });
     }
 
     const userId = users[0].id;
+    const userName = users[0].name;
     
-    // 驗證科目和學期是否存在
-    const [[subject], [semester]] = await Promise.all([
-      connection.query('SELECT id FROM subjects WHERE id = ?', [subjectId]),
-      connection.query('SELECT id FROM semesters WHERE id = ?', [semesterId])
-    ]);
-
-    if (!subject || !semester) {
-      return NextResponse.json({ 
-        error: '科目或學期不存在' 
-      }, { status: 404 });
-    }
-
+    // 準備插入數據
+    const insertData = {
+      student_id: userId,
+      student_name: userName,
+      academic_year: gradeData.academic_year,
+      term: gradeData.term,
+      course_id: gradeData.course_id,
+      course_name: gradeData.course_name,
+      course_category: gradeData.course_category,
+      teacher_name: gradeData.teacher_name,
+      score_type: gradeData.score_type,
+      score: gradeData.score,
+      credits: gradeData.credits,
+      ranking: gradeData.ranking || null,
+      total_courses: gradeData.total_courses || null,
+      total_credits: gradeData.total_credits || null,
+      pass_courses: gradeData.pass_courses || null,
+      pass_credits: gradeData.pass_credits || null,
+      class_rank: gradeData.class_rank || null,
+      average_score: gradeData.average_score || null,
+      account: tokenValidation.account  // 添加 account 欄位
+    };
+    
+    // 動態生成 SQL 語句
+    const fields = Object.keys(insertData);
+    const placeholders = fields.map(() => '?').join(', ');
+    const values = Object.values(insertData);
+    
     // 插入成績記錄
     const [result] = await connection.query(
-      'INSERT INTO grades (subjectId, semesterId, score, userId) VALUES (?, ?, ?, ?)',
-      [subjectId, semesterId, score, userId]
+      `INSERT INTO grades (${fields.join(', ')}) VALUES (${placeholders})`,
+      values
     );
 
     // 獲取插入的記錄
     const [newGrade] = await connection.query(`
-      SELECT 
-        grades.id,
-        grades.score,
-        grades.created_at,
-        grades.subjectId,
-        grades.semesterId,
-        subjects.name as subject_name,
-        semesters.name as semester_name
-      FROM grades
-      LEFT JOIN subjects ON grades.subjectId = subjects.id
-      LEFT JOIN semesters ON grades.semesterId = semesters.id
-      WHERE grades.id = ?
+      SELECT * FROM grades WHERE id = ?
     `, [result.insertId]);
 
     log('Created new grade:', newGrade[0]);

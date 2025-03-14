@@ -1,30 +1,17 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Loader2, Search } from 'lucide-react';
+import { Loader2, Filter } from 'lucide-react';
 import { Toaster, toast } from 'react-hot-toast';
 
-export default function GradeForm() {
-  const [subjects, setSubjects] = useState([]);
-  const [semesters, setSemesters] = useState([]);
-  const [selectedSubject, setSelectedSubject] = useState('');
-  const [selectedSemester, setSelectedSemester] = useState('');
-  const [score, setScore] = useState('');
+export default function TranscriptPage() {
+  // State for displaying and filtering
   const [grades, setGrades] = useState([]);
-  const [showGrades, setShowGrades] = useState(false);
-  const [filterSemester, setFilterSemester] = useState('');
-  const [loadingStates, setLoadingStates] = useState({
-    subjects: true,
-    semesters: true,
-    grades: true,
-    submission: false
-  });
-  const [errors, setErrors] = useState({
-    subjects: null,
-    semesters: null,
-    grades: null,
-    submission: null
-  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [filterAcademicYear, setFilterAcademicYear] = useState('');
+  const [filterTerm, setFilterTerm] = useState('');
+  const [filterScoreType, setFilterScoreType] = useState('');
 
   const fetchWithRetry = async (url, options = {}, retries = 3) => {
     for (let i = 0; i < retries; i++) {
@@ -45,113 +32,128 @@ export default function GradeForm() {
     }
   };
 
-  const fetchData = async (type, url) => {
-    setLoadingStates(prev => ({ ...prev, [type]: true }));
-    setErrors(prev => ({ ...prev, [type]: null }));
+  const fetchGrades = async () => {
+    setLoading(true);
+    setError(null);
 
     try {
-      const data = await fetchWithRetry(url);
-      switch (type) {
-        case 'subjects':
-          setSubjects(data);
-          break;
-        case 'semesters':
-          const sortedSemesters = [...data].sort((a, b) => a.id - b.id);
-          setSemesters(sortedSemesters);
-          break;
-        case 'grades':
-          setGrades(data);
-          break;
-      }
+      const data = await fetchWithRetry('/api/grades');
+      setGrades(data);
     } catch (error) {
-      console.error(`Error fetching ${type}:`, error);
-      toast.error(`無法載入${type === 'subjects' ? '科目' : type === 'semesters' ? '學期' : '成績'}資料`);
-      setErrors(prev => ({
-        ...prev,
-        [type]: `無法載入${type === 'subjects' ? '科目' : type === 'semesters' ? '學期' : '成績'}資料`
-      }));
+      console.error('Error fetching grades:', error);
+      toast.error('無法載入成績資料');
+      setError('無法載入成績資料');
     } finally {
-      setLoadingStates(prev => ({ ...prev, [type]: false }));
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchData('subjects', '/api/subjects');
-    fetchData('semesters', '/api/semesters');
-    fetchData('grades', '/api/grades');
-  }, []);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoadingStates(prev => ({ ...prev, submission: true }));
-    setErrors(prev => ({ ...prev, submission: null }));
-
-    try {
-      const response = await fetch('/api/grades', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          subjectId: selectedSubject,
-          semesterId: selectedSemester,
-          score: Number(score)
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || '儲存失敗');
+    fetchGrades();
+    
+    // 添加调试代码，帮助排查问题
+    const debugDataTypes = () => {
+      if (grades.length > 0) {
+        console.log("数据类型检查:");
+        console.log("第一条记录 academic_year:", grades[0].academic_year, "类型:", typeof grades[0].academic_year);
+        console.log("第一条记录 term:", grades[0].term, "类型:", typeof grades[0].term);
+        console.log("筛选值 academic_year:", filterAcademicYear, "类型:", typeof filterAcademicYear);
+        console.log("筛选值 term:", filterTerm, "类型:", typeof filterTerm);
+        
+        // 检查是否有113学年的数据
+        const has113 = grades.some(g => String(g.academic_year) === "113");
+        console.log("是否包含113学年数据:", has113);
+        if (has113) {
+          console.log("113学年数据样例:", grades.find(g => String(g.academic_year) === "113"));
+        }
       }
-
-      toast.success('成績已成功儲存');
-      resetForm();
-      await fetchData('grades', '/api/grades');
-    } catch (error) {
-      console.error('Error saving grade:', error);
-      toast.error(error.message || '儲存時發生錯誤');
-      setErrors(prev => ({
-        ...prev,
-        submission: error.message || '儲存時發生錯誤'
-      }));
-    } finally {
-      setLoadingStates(prev => ({ ...prev, submission: false }));
+    };
+    
+    if (grades.length > 0) {
+      debugDataTypes();
     }
-  };
+  }, [grades.length]);
 
-  const resetForm = () => {
-    setScore('');
-    setSelectedSubject('');
-    setSelectedSemester('');
+  // 将数字成绩类型转换为可读的文本
+  const getScoreTypeText = (type) => {
+    switch (type) {
+      case "1": return "学期成绩";
+      case "2": return "期中考试";
+      case "3": return "期末考试";
+      case "4": return "平时成绩";
+      default: return type; // 如果是其他值，直接返回原值
+    }
   };
 
   const filteredGrades = grades.filter(grade => {
-    if (!filterSemester) return true;
-    return grade.semesterId.toString() === filterSemester.toString();
+    if (!filterAcademicYear && !filterTerm && !filterScoreType) return true;
+    
+    // 使用字符串比较确保类型一致性
+    const matchesYear = !filterAcademicYear || String(grade.academic_year) === String(filterAcademicYear);
+    const matchesTerm = !filterTerm || String(grade.term) === String(filterTerm);
+    const matchesScoreType = !filterScoreType || String(grade.score_type) === String(filterScoreType);
+    
+    return matchesYear && matchesTerm && matchesScoreType;
   });
 
+  // Get unique academic years, terms and score types for filtering
+  const academicYears = [...new Set(grades.map(grade => grade.academic_year))].filter(Boolean).sort();
+  const terms = [...new Set(grades.map(grade => grade.term))].filter(Boolean).sort();
+  const scoreTypes = [...new Set(grades.map(grade => grade.score_type))].filter(Boolean).sort();
+
+  // Group grades by academic year and term
   const groupedGrades = filteredGrades.reduce((acc, grade) => {
-    const semesterId = grade.semesterId;
-    if (!acc[semesterId]) {
-      acc[semesterId] = {
-        name: grade.semester_name,
+    // Make sure academic_year and term are defined
+    const academic_year = grade.academic_year || '未知';
+    const term = grade.term || '未知';
+    const key = `${academic_year}-${term}`;
+    
+    if (!acc[key]) {
+      acc[key] = {
+        academicYear: academic_year,
+        term: term,
         grades: []
       };
     }
-    acc[semesterId].grades.push(grade);
+    
+    acc[key].grades.push(grade);
     return acc;
   }, {});
 
   const calculateSemesterStats = (semesterGrades) => {
-    if (!semesterGrades.length) return { average: 0, highest: 0, lowest: 0, total: 0 };
+    if (!semesterGrades.length) return { average: 0, highest: 0, lowest: 0, totalScore: 0, totalCredits: 0 };
 
-    const scores = semesterGrades.map(grade => grade.score);
-    const total = scores.reduce((a, b) => a + b, 0);
+    // Use average_score if available, otherwise calculate from individual scores
+    if (semesterGrades[0].average_score != null) {
+      const highestGrade = semesterGrades.reduce((max, grade) => 
+        (grade.score > max.score) ? grade : max, semesterGrades[0]);
+        
+      const lowestGrade = semesterGrades.reduce((min, grade) => 
+        (grade.score < min.score) ? grade : min, semesterGrades[0]);
 
-    return {
-      average: (total / scores.length).toFixed(1),
-      highest: Math.max(...scores),
-      lowest: Math.min(...scores),
-      total: total
-    };
+      return {
+        average: typeof semesterGrades[0].average_score === 'number' 
+          ? semesterGrades[0].average_score.toFixed(1) 
+          : semesterGrades[0].average_score,
+        highest: highestGrade.score,
+        lowest: lowestGrade.score,
+        totalScore: semesterGrades.reduce((sum, grade) => sum + grade.score, 0),
+        totalCredits: semesterGrades[0].total_credits || semesterGrades.reduce((sum, grade) => sum + (grade.credits || 0), 0)
+      };
+    } else {
+      // Calculate manually if average_score is not provided
+      const weightedScores = semesterGrades.map(grade => grade.score * (grade.credits || 0));
+      const totalCredits = semesterGrades.reduce((sum, grade) => sum + (grade.credits || 0), 0);
+      const totalWeightedScore = weightedScores.reduce((a, b) => a + b, 0);
+      
+      return {
+        average: totalCredits > 0 ? (totalWeightedScore / totalCredits).toFixed(1) : "0.0",
+        highest: Math.max(...semesterGrades.map(grade => grade.score || 0)),
+        lowest: Math.min(...semesterGrades.map(grade => grade.score || 0)),
+        totalScore: semesterGrades.reduce((sum, grade) => sum + (grade.score || 0), 0),
+        totalCredits
+      };
+    }
   };
 
   return (
@@ -159,25 +161,35 @@ export default function GradeForm() {
       <Toaster position="top-center" reverseOrder={false} />
       
       <Card>
-        <CardHeader>
-          <CardTitle>新增成績</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>成績查詢</CardTitle>
+          <button 
+            onClick={fetchGrades} 
+            className="bg-blue-500 text-white py-1 px-3 rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={loading}
+          >
+            {loading ? (
+              <span className="flex items-center justify-center">
+                <Loader2 className="animate-spin mr-2 h-4 w-4" />
+                加載中
+              </span>
+            ) : '重新加載'}
+          </button>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                選擇學期：
+                篩選學年度：
                 <select
-                  value={selectedSemester}
-                  onChange={(e) => setSelectedSemester(e.target.value)}
+                  value={filterAcademicYear}
+                  onChange={(e) => setFilterAcademicYear(e.target.value)}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  required
-                  disabled={loadingStates.semesters || loadingStates.submission}
                 >
-                  <option value="">請選擇學期</option>
-                  {semesters.map((semester) => (
-                    <option key={semester.id} value={semester.id}>
-                      {semester.name}
+                  <option value="">全部學年度</option>
+                  {academicYears.map((year) => (
+                    <option key={year} value={year}>
+                      {year}學年
                     </option>
                   ))}
                 </select>
@@ -185,166 +197,136 @@ export default function GradeForm() {
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                選擇科目：
-                <select
-                  value={selectedSubject}
-                  onChange={(e) => setSelectedSubject(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  required
-                  disabled={loadingStates.subjects || loadingStates.submission}
-                >
-                  <option value="">請選擇科目</option>
-                  {subjects.map((subject) => (
-                    <option key={subject.id} value={subject.id}>
-                      {subject.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                成績：
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={score}
-                  onChange={(e) => setScore(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  required
-                  disabled={loadingStates.submission}
-                />
-              </label>
-            </div>
-            
-            <div className="flex gap-4">
-              <button
-                type="submit"
-                className="flex-1 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={loadingStates.submission || loadingStates.subjects || loadingStates.semesters}
-              >
-                {loadingStates.submission ? (
-                  <span className="flex items-center justify-center">
-                    <Loader2 className="animate-spin -ml-1 mr-2 h-5 w-5" />
-                    處理中...
-                  </span>
-                ) : '儲存成績'}
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowGrades(!showGrades)}
-                className="flex-1 bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-              >
-                <span className="flex items-center justify-center">
-                  <Search className="mr-2 h-5 w-5" />
-                  {showGrades ? '隱藏成績' : '查詢成績'}
-                </span>
-              </button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-
-      {showGrades && (
-        <Card>
-          <CardHeader>
-            <CardTitle>成績記錄</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700">
                 篩選學期：
                 <select
-                  value={filterSemester}
-                  onChange={(e) => setFilterSemester(e.target.value)}
+                  value={filterTerm}
+                  onChange={(e) => setFilterTerm(e.target.value)}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 >
                   <option value="">全部學期</option>
-                  {semesters.map((semester) => (
-                    <option key={semester.id} value={semester.id}>
-                      {semester.name}
+                  {terms.map((term) => (
+                    <option key={term} value={term}>
+                      {term}
                     </option>
                   ))}
                 </select>
               </label>
             </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                成績類型：
+                <select
+                  value={filterScoreType}
+                  onChange={(e) => setFilterScoreType(e.target.value)}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                >
+                  <option value="">全部類型</option>
+                  <option value="1">學期成績</option>
+                  <option value="2">期中考試</option>
+                  <option value="3">期末考試</option>
+                  <option value="4">平時成績</option>
+                  {/* 显示数据库中可能存在的其他成绩类型 */}
+                  {scoreTypes
+                    .filter(type => !["1", "2", "3", "4"].includes(type))
+                    .map((type) => (
+                      <option key={type} value={type}>
+                        {getScoreTypeText(type)}
+                      </option>
+                    ))}
+                </select>
+              </label>
+            </div>
+          </div>
 
-            {loadingStates.grades ? (
-              <div className="text-center py-4 text-gray-500">
-                加載中...
-              </div>
-            ) : filteredGrades.length === 0 ? (
-              <div className="text-center py-4 text-gray-500">
-                目前沒有成績記錄
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {Object.entries(groupedGrades).map(([semesterId, { name: semesterName, grades: semesterGrades }]) => {
-                  const stats = calculateSemesterStats(semesterGrades);
-                  
-                  return (
-                    <div key={semesterId} className="rounded-lg border p-4">
-                      <h3 className="text-xl font-semibold mb-2">{semesterName}</h3>
-                      
-                      <div className="flex justify-between mb-4 text-sm text-gray-600">
-                        <div>總分：{stats.total}</div>
-                        <div className={`text-gray-600 ${stats.average < 60 ? 'text-red-600' : ''}`}>
-                          平均：{stats.average}
-                        </div>
-                        <div className={`text-gray-600 ${stats.highest < 60 ? 'text-red-600' : ''}`}>
-                          最高：{stats.highest}
-                        </div>
-                        <div className={`text-gray-600 ${stats.lowest < 60 ? 'text-red-600' : ''}`}>
-                          最低：{stats.lowest}
-                        </div>
-                      </div>
-                      
-                      <div className="overflow-x-auto">
+          {loading ? (
+            <div className="text-center py-4 text-gray-500">
+              <Loader2 className="animate-spin h-8 w-8 mx-auto mb-2" />
+              加載中...
+            </div>
+          ) : error ? (
+            <div className="text-center py-4 text-red-500">
+              {error}
+            </div>
+          ) : filteredGrades.length === 0 ? (
+            <div className="text-center py-4 text-gray-500">
+              目前沒有成績記錄
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {Object.entries(groupedGrades).map(([key, { academicYear, term, grades: termGrades }]) => {
+                const stats = calculateSemesterStats(termGrades);
+                
+                return (
+                  <div key={key} className="rounded-lg border p-4">
+                    <h3 className="text-xl font-semibold mb-2">{academicYear}學年 {term}</h3>
+                    
+                    <div className="flex flex-wrap justify-between mb-4 text-sm text-gray-600">
+                      <div>平均分數：<span className={stats.average < 60 ? 'text-red-600 font-bold' : ''}>{stats.average}</span></div>
+                      <div>總學分：{stats.totalCredits}</div>
+                      {termGrades[0].class_rank && <div>班級排名：{termGrades[0].class_rank}</div>}
+                      {termGrades[0].pass_credits && <div>通過學分：{termGrades[0].pass_credits}/{termGrades[0].total_credits}</div>}
+                    </div>
+                    
+                    <div className="overflow-x-auto">
                       <table className="min-w-full table-auto divide-y divide-gray-200">
-                          <thead className="bg-gray-50">
-                            <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/2">
-                                科目
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/2">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              課程名稱
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               成績
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
-                            {semesterGrades.map((grade) => (
-                              <tr key={grade.id}>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  {grade.subject_name}
-                                </td>
-                                <td className={`px-6  whitespace-nowrap flex items-center ${grade.score < 60 ? 'text-red-600' : ''}`}>
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              課程類別
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              學分
+                            </th>
+                          
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {termGrades.map((grade) => (
+                            <tr key={grade.id}>
+                              <td className="px-4 py-4 whitespace-nowrap">
+                                {grade.course_name}
+                              </td>
+                              <td className={`px-4 py-4 whitespace-nowrap font-medium ${grade.score < 60 ? 'text-red-600' : ''}`}>
+                                <div className="flex items-center">
                                   {grade.score}
                                   {grade.score >= 80 && (
-                                    <div className="ml-2 relative w-16 h-16">
+                                    <div className="ml-2 relative w-6 h-6">
                                       <img
                                         src="/good.png"
                                         alt="Good score"
-                                        className="w-16 h-16 object-contain"
+                                        className="w-6 h-6 object-contain"
                                       />
                                     </div>
                                   )}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-4 whitespace-nowrap text-sm">
+                                {grade.course_category}
+                              </td>
+                              <td className="px-4 py-4 whitespace-nowrap text-sm text-center">
+                                {grade.credits}
+                              </td>
+                             
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
