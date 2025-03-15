@@ -3,16 +3,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTheme } from 'next-themes';
 import { 
-  Home, Info, Calendar, Settings, Loader, UserCircle, 
+  Home, Info, Settings, Loader, UserCircle, 
   XIcon, BookOpen, Camera, Music, ChevronRight, Plus,
-  ImageIcon, Pencil
+  ImageIcon, Pencil, GraduationCap, Award, FileText, BarChart,
+  AlertTriangle, X
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
-import { format, getDay } from 'date-fns';
-import { zhTW } from 'date-fns/locale';
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { usePathname, useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 
 // NavItem Component
@@ -31,101 +29,347 @@ const NavItem = ({ href, Icon, text, onClick, isActive }) => (
   </Link>
 );
 
-// MenuContent Component
-const MenuContent = ({ items, activeMenu, onClose }) => {
-  const [date, setDate] = useState(new Date());
-  const [message, setMessage] = useState(null);
+// FailedCoursesDialog Component - 显示未通过课程的弹出窗口
+const FailedCoursesDialog = ({ isOpen, onClose, failedCourses, term, academicYear }) => {
+  if (!isOpen) return null;
+  
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <div 
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full max-h-[80vh] z-10">
+        <div className="flex items-center justify-between p-4 border-b dark:border-gray-700">
+          <h3 className="text-lg font-semibold flex items-center">
+            <AlertTriangle className="h-5 w-5 mr-2 text-red-500" />
+            未通過科目 - {academicYear}學年 {term}
+          </h3>
+          <button 
+            onClick={onClose}
+            className="p-1 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="p-4 overflow-y-auto max-h-[60vh]">
+          {failedCourses.length === 0 ? (
+            <p className="text-center text-gray-500 py-4">沒有未通過的科目</p>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+                以下科目成績未達60分，需要補修或重修：
+              </p>
+              {failedCourses.map((course) => (
+                <div 
+                  key={course.id} 
+                  className="p-3 border rounded-lg dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h4 className="font-medium">{course.course_name}</h4>
+                      <p className="text-sm text-gray-500 mt-1">{course.course_category} · {course.credits} 學分</p>
+                    </div>
+                    <div className="text-red-600 font-bold text-xl">{course.score}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="p-4 border-t dark:border-gray-700">
+          <Button 
+            variant="outline" 
+            className="w-full" 
+            onClick={onClose}
+          >
+            關閉
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
-  const showMessage = (title, description, isError = false) => {
-    setMessage({ title, description, isError });
-    setTimeout(() => setMessage(null), 5000);
+// GraduationRequirementsContent Component
+const GraduationRequirementsContent = ({ onClose }) => {
+  const router = useRouter();
+  const pathname = usePathname();
+  const [semesterData, setSemesterData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [showFailedCourses, setShowFailedCourses] = useState(false);
+  const [selectedSemester, setSelectedSemester] = useState(null);
+
+  useEffect(() => {
+    const fetchGraduationData = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch('/api/grades');
+        if (!response.ok) throw new Error('無法獲取成績數據');
+        const data = await response.json();
+        
+        // 只保留score_type=1（学期成绩）的记录
+        const semesterGrades = data.filter(grade => String(grade.score_type) === "1");
+        
+        // 直接按学期分组
+        const groupedByTerm = {};
+        semesterGrades.forEach(grade => {
+          const key = `${grade.academic_year}-${grade.term}`;
+          if (!groupedByTerm[key]) {
+            groupedByTerm[key] = [];
+          }
+          groupedByTerm[key].push(grade);
+        });
+        
+        // 转换为数组，每个学期有自己的成绩数组
+        const semestersArray = Object.entries(groupedByTerm).map(([key, grades]) => {
+          const termInfo = grades[0];
+          
+          // 查找未通过的课程
+          const failedCourses = grades.filter(grade => parseFloat(grade.score) < 60);
+          
+          return {
+            academicYear: termInfo.academic_year,
+            term: termInfo.term,
+            termGrades: grades,
+            failedCourses: failedCourses,
+            stats: {
+              average: termInfo.average_score, // 直接使用average_score
+              totalCredits: termInfo.total_credits,
+            }
+          };
+        }).sort((a, b) => {
+          // 按学年学期排序，降序
+          if (a.academicYear !== b.academicYear) return b.academicYear - a.academicYear;
+          return b.term - a.term;
+        });
+        
+        console.log("学期成绩数据:", semestersArray);
+        setSemesterData(semestersArray);
+      } catch (err) {
+        setError(err.message);
+        console.error("获取成绩数据错误:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGraduationData();
+  }, []);
+
+  // 處理通過學分點擊
+  const handlePassCreditsClick = (semester) => {
+    setSelectedSemester(semester);
+    setShowFailedCourses(true);
+  };
+  
+  // 处理详细成绩查看
+  const handleViewTranscript = (academicYear, term) => {
+    // 关闭滑出菜单
+    if (onClose) onClose();
+    
+    // 检查当前是否已在成绩单页面
+    if (pathname === '/transcript') {
+      // 如果已在成绩单页面，只更新查询参数
+      router.push(`/transcript?year=${academicYear}&term=${term}`, { scroll: false });
+    } else {
+      // 否则导航到成绩单页面
+      router.push(`/transcript?year=${academicYear}&term=${term}`);
+    }
+  };
+
+  // 計算總體進度 - 使用每个学期的数据累加
+  const overallProgress = semesterData.length > 0 
+    ? {
+        totalRequiredCredits: 128, // 假設畢業要求128學分
+        totalEarnedCredits: semesterData.reduce((sum, sem) => {
+          // 使用学期中第一条记录的pass_credits，如果存在的话
+          if (sem.termGrades && sem.termGrades.length > 0 && sem.termGrades[0].pass_credits) {
+            return sum + Number(sem.termGrades[0].pass_credits);
+          }
+          return sum;
+        }, 0),
+        generalEducationCredits: 30, // 假設通識教育要求
+        earnedGeneralEducationCredits: 18, // 假設已修的通識學分
+        majorCredits: 75, // 假設主修要求
+        earnedMajorCredits: 60, // 假設已修的主修學分
+        electiveCredits: 23, // 假設選修要求
+        earnedElectiveCredits: 15, // 假設已修的選修學分
+      }
+    : null;
+
+  // 获取学期描述
+  const getTermText = (term) => {
+    const termStr = String(term);
+    switch (termStr) {
+      case "1": return "第一學期";
+      case "2": return "第二學期";
+      default: return `第${term}學期`;
+    }
   };
 
   return (
-    <div className="p-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
-      {message && (
-        <div className={`fixed top-4 right-4 p-4 rounded-md ${message.isError ? 'bg-red-500' : 'bg-green-500'} text-white`}>
-          <h3 className="font-bold">{message.title}</h3>
-          <p>{message.description}</p>
+    <div className="p-4 space-y-6">
+      {loading ? (
+        <div className="flex justify-center items-center h-40">
+          <Loader className="animate-spin h-8 w-8 text-blue-500" />
         </div>
+      ) : error ? (
+        <div className="text-center text-red-500 p-4">
+          {error}
+        </div>
+      ) : semesterData.length === 0 ? (
+        <div className="text-center text-gray-500 p-4">
+          沒有找到任何學期成績記錄
+        </div>
+      ) : (
+        <>
+          {/* 畢業總進度 */}
+          {overallProgress && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+              <h3 className="text-lg font-semibold mb-3 flex items-center">
+                <Award className="h-5 w-5 mr-2 text-yellow-500" />
+                畢業總進度
+              </h3>
+              
+              <div className="space-y-3">
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span>總學分進度</span>
+                    <span>{overallProgress.totalEarnedCredits}/{overallProgress.totalRequiredCredits} 學分</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                    <div 
+                      className="bg-blue-600 h-2.5 rounded-full" 
+                      style={{ width: `${Math.min(100, (overallProgress.totalEarnedCredits / overallProgress.totalRequiredCredits) * 100)}%` }}
+                    ></div>
+                  </div>
+                </div>
+                
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span>通識教育</span>
+                    <span>{overallProgress.earnedGeneralEducationCredits}/{overallProgress.generalEducationCredits} 學分</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                    <div 
+                      className="bg-green-500 h-2.5 rounded-full" 
+                      style={{ width: `${Math.min(100, (overallProgress.earnedGeneralEducationCredits / overallProgress.generalEducationCredits) * 100)}%` }}
+                    ></div>
+                  </div>
+                </div>
+                
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span>主修科目</span>
+                    <span>{overallProgress.earnedMajorCredits}/{overallProgress.majorCredits} 學分</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                    <div 
+                      className="bg-purple-500 h-2.5 rounded-full" 
+                      style={{ width: `${Math.min(100, (overallProgress.earnedMajorCredits / overallProgress.majorCredits) * 100)}%` }}
+                    ></div>
+                  </div>
+                </div>
+                
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span>選修科目</span>
+                    <span>{overallProgress.earnedElectiveCredits}/{overallProgress.electiveCredits} 學分</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                    <div 
+                      className="bg-yellow-500 h-2.5 rounded-full" 
+                      style={{ width: `${Math.min(100, (overallProgress.earnedElectiveCredits / overallProgress.electiveCredits) * 100)}%` }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-4">
+                <Button 
+                  variant="outline" 
+                  className="w-full" 
+                  onClick={() => window.location.href = '/graduation/requirements'}
+                >
+                  查看畢業要求詳情
+                </Button>
+              </div>
+            </div>
+          )}
+          
+          {/* 學期成績列表 */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold flex items-center">
+              <BarChart className="h-5 w-5 mr-2 text-blue-500" />
+              學期成績概覽
+            </h3>
+            
+            {semesterData.map((semester, index) => {
+              const { academicYear, term, termGrades, stats, failedCourses } = semester;
+              const hasFailedCourses = failedCourses && failedCourses.length > 0;
+              
+              return (
+                <div key={index} className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+                  <h4 className="font-medium text-base mb-2">
+                    {academicYear}學年 {getTermText(term)}
+                  </h4>
+                  
+                  <div className="flex flex-wrap justify-between mb-4 text-sm text-gray-600">
+                    <div>平均分數：<span className={parseFloat(stats.average) < 60 ? 'text-red-600 font-bold' : ''}>{stats.average}</span></div>
+                    {termGrades[0].pass_credits && (
+                      <button 
+                        onClick={() => handlePassCreditsClick(semester)}
+                        className={`${hasFailedCourses ? 'text-red-500 hover:text-red-700' : 'text-gray-600'} cursor-pointer flex items-center`}
+                      >
+                        通過學分：
+                        <span className="font-medium mx-1">{termGrades[0].pass_credits}/{termGrades[0].total_credits}</span>
+                        {hasFailedCourses && (
+                          <AlertTriangle className="h-4 w-4 ml-1" />
+                        )}
+                      </button>
+                    )}
+                  </div>
+                  
+                  <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mb-3">
+                    <div 
+                      className={`h-2.5 rounded-full ${Number(stats.average) >= 80 ? 'bg-green-500' : Number(stats.average) >= 70 ? 'bg-blue-500' : Number(stats.average) >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                      style={{ width: `${Math.min(100, (Number(stats.average) / 100) * 100)}%` }}
+                    ></div>
+                  </div>
+                  
+                  <button 
+                    onClick={() => handleViewTranscript(academicYear, term)}
+                    className="text-sm text-blue-500 hover:text-blue-700 flex items-center"
+                  >
+                    <FileText className="h-4 w-4 mr-1" />
+                    查看詳細成績
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+          
+          {/* 未通过课程弹窗 */}
+          {selectedSemester && (
+            <FailedCoursesDialog 
+              isOpen={showFailedCourses}
+              onClose={() => setShowFailedCourses(false)}
+              failedCourses={selectedSemester.failedCourses}
+              term={getTermText(selectedSemester.term)}
+              academicYear={selectedSemester.academicYear}
+            />
+          )}
+        </>
       )}
-      <CalendarComponent
-        mode="single"
-        selected={date}
-        onSelect={(newDate) => {
-          if (newDate) {
-            setDate(newDate);
-          }
-        }}
-        className="rounded-md border"
-      />
-      
-      {/* 您可以在這裡添加其他内容，例如日期显示 */}
-      <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-md">
-        <h3 className="text-lg font-semibold">
-          {format(date, 'yyyy年M月d日 EEEE', { locale: zhTW })}
-        </h3>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">
-          選擇日期來查看您的行程
-        </p>
-      </div>
-      
-      {/* 替代按鈕，如果需要的話 */}
-      <div className="mt-4">
-        <Button onClick={() => window.location.href = '/calendar'} className="w-full">
-          前往行事曆頁面
-        </Button>
-      </div>
     </div>
   );
 };
 
 // SlideOutMenu Component
 const SlideOutMenu = ({ isOpen, onClose, activeMenu }) => {
-  const calendarItems = [
-    { 
-      icon: Info, 
-      text: '每日事項', 
-      href: '/calendar/daily',
-      color: 'text-blue-500'
-    },
-    { 
-      icon: Calendar, 
-      text: '月曆總覽', 
-      href: '/calendar/monthly',
-      color: 'text-green-500'
-    },
-    {
-      icon: Plus,
-      text: '新增事項',
-      href: '/calendar/new',
-      color: 'text-purple-500'
-    }
-  ];
-
-  const readingItems = [
-    { 
-      icon: BookOpen, 
-      text: '閱讀', 
-      href: '/reading',
-      color: 'text-green-500'
-    },
-    { 
-      icon: Camera, 
-      text: '相機', 
-      href: '/camera',
-      color: 'text-blue-500'
-    },
-    { 
-      icon: Music, 
-      text: '音樂', 
-      href: '/music',
-      color: 'text-purple-500'
-    }
-  ];
-
-  const menuItems = activeMenu === 'calendar' ? calendarItems : readingItems;
-
   return (
     <>
       {/* Mobile Version - Fullscreen */}
@@ -145,7 +389,7 @@ const SlideOutMenu = ({ isOpen, onClose, activeMenu }) => {
         >
           <div className="sticky top-0 z-10 px-4 py-3 flex items-center justify-between border-b dark:border-gray-700 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
             <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
-              {activeMenu === 'calendar' ? '行事曆' : '快速功能'}
+              畢業門檻與成績
             </h2>
             <button 
               onClick={onClose}
@@ -155,7 +399,7 @@ const SlideOutMenu = ({ isOpen, onClose, activeMenu }) => {
             </button>
           </div>
           <div className="h-[calc(100vh-57px)] overflow-y-auto overscroll-contain">
-            <MenuContent items={menuItems} activeMenu={activeMenu} onClose={onClose} />
+            <GraduationRequirementsContent onClose={onClose} />
           </div>
         </div>
       </div>
@@ -169,7 +413,7 @@ const SlideOutMenu = ({ isOpen, onClose, activeMenu }) => {
           <div className="p-4 border-b dark:border-gray-700">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
-                {activeMenu === 'calendar' ? '行事曆' : '快速功能'}
+                畢業門檻與成績
               </h2>
               <button 
                 onClick={onClose}
@@ -180,7 +424,7 @@ const SlideOutMenu = ({ isOpen, onClose, activeMenu }) => {
             </div>
           </div>
           <div className="overflow-y-auto h-[calc(100vh-73px)]">
-            <MenuContent items={menuItems} activeMenu={activeMenu} onClose={onClose} />
+            <GraduationRequirementsContent onClose={onClose} />
           </div>
         </div>
       </div>
@@ -198,11 +442,7 @@ const FloatingButton = ({ imageToggle, onClick }) => (
         transition-all duration-200 hover:scale-110 active:scale-95
         focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
     >
-      {imageToggle ? (
-        <Pencil className="w-6 h-6 text-white" />
-      ) : (
-        <ImageIcon className="w-6 h-6 text-white" />
-      )}
+      <GraduationCap className="w-6 h-6 text-white" />
     </button>
   </div>
 );
@@ -262,20 +502,15 @@ const BottomNav = () => {
     };
   }, [fetchUser]);
 
-  // Handle image toggle
-  const handleImageToggle = () => {
-    setImageToggle(!imageToggle);
-  };
-
-  // Handle nav item click
-  const handleNavItemClick = (menu) => {
-    if (activeMenu === menu && isMenuOpen) {
+  // Handle graduation requirements menu
+  const handleGraduationMenu = () => {
+    if (activeMenu === 'graduation' && isMenuOpen) {
       setIsMenuOpen(false);
       setActiveMenu(null);
       setImageToggle(false);
     } else {
       setIsMenuOpen(true);
-      setActiveMenu(menu);
+      setActiveMenu('graduation');
       setImageToggle(true);
     }
   };
@@ -333,16 +568,16 @@ const BottomNav = () => {
               )}
               <NavItem 
                 href="#" 
-                Icon={Calendar} 
-                text="行事曆" 
-                onClick={() => handleNavItemClick('calendar')}
-                isActive={activeMenu === 'calendar' && isMenuOpen}
+                Icon={GraduationCap} 
+                text="畢業門檻" 
+                onClick={handleGraduationMenu}
+                isActive={activeMenu === 'graduation' && isMenuOpen}
               />
             </div>
           </div>
           <FloatingButton 
             imageToggle={imageToggle}
-            onClick={handleImageToggle}
+            onClick={handleGraduationMenu}
           />
         </div>
       </nav>

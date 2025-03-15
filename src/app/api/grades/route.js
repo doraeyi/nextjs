@@ -47,7 +47,7 @@ export async function GET() {
   try {
     connection = await connectToDatabase();
 
-    // 直接使用 account 查詢成績
+    // 直接使用 account 查詢成績，添加 locked 字段
     const [grades] = await connection.query(`
       SELECT 
         id,
@@ -62,6 +62,7 @@ export async function GET() {
         score_type,
         score,
         credits,
+        locked,
         ranking,
         total_courses,
         total_credits,
@@ -136,7 +137,7 @@ export async function POST(request) {
     const userId = users[0].id;
     const userName = users[0].name;
     
-    // 準備插入數據
+    // 準備插入數據，添加 locked 字段
     const insertData = {
       student_id: userId,
       student_name: userName,
@@ -149,6 +150,7 @@ export async function POST(request) {
       score_type: gradeData.score_type,
       score: gradeData.score,
       credits: gradeData.credits,
+      locked: gradeData.locked || 0, // 默认为0表示未锁定
       ranking: gradeData.ranking || null,
       total_courses: gradeData.total_courses || null,
       total_credits: gradeData.total_credits || null,
