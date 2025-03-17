@@ -100,6 +100,7 @@ const GraduationRequirementsContent = ({ onClose }) => {
   const [error, setError] = useState(null);
   const [showFailedCourses, setShowFailedCourses] = useState(false);
   const [selectedSemester, setSelectedSemester] = useState(null);
+  const [overallProgress, setOverallProgress] = useState(null);
 
   useEffect(() => {
     const fetchGraduationData = async () => {
@@ -111,6 +112,57 @@ const GraduationRequirementsContent = ({ onClose }) => {
         
         // 只保留score_type=1（学期成绩）的记录
         const semesterGrades = data.filter(grade => String(grade.score_type) === "1");
+        
+        // 初始化各類別學分計數
+        let generalRequiredEarned = 0;         // 1: 一般科目必修
+        let schoolRequiredEarned = 0;          // 2: 校訂科目必修
+        let professionalRequiredEarned = 0;    // 3: 專業科目必修
+        let professionalElectiveEarned = 0;    // 4: 專業科目選修
+        let generalElectiveEarned = 0;         // 5: 一般科目選修
+        let totalEarnedCredits = 0;            // 總已修學分
+        
+        // 處理所有成績，計算各類別已修學分
+        semesterGrades.forEach(grade => {
+          const score = parseFloat(grade.score);
+          const credits = parseFloat(grade.credits);
+          const category = parseInt(grade.course_category);
+          
+          // 只計算及格的科目（分數 >= 60）
+          if (score >= 60 && !isNaN(credits)) {
+            totalEarnedCredits += credits;
+            
+            // 根據course_category欄位分類學分
+            switch (category) {
+              case 1:  // 一般科目必修
+                generalRequiredEarned += credits;
+                break;
+              case 2:  // 校訂科目必修
+                schoolRequiredEarned += credits;
+                break;
+              case 3:  // 專業科目必修
+                professionalRequiredEarned += credits;
+                break;
+              case 4:  // 專業科目選修
+                professionalElectiveEarned += credits;
+                break;
+              case 5:  // 一般科目選修
+                generalElectiveEarned += credits;
+                break;
+              default:
+                console.warn('未知課程類別:', category);
+            }
+          }
+        });
+        
+        // 設定各類別學分要求（根據提供的要求）
+        const generalRequiredCredits = 64;          // 一般科目必修學分要求
+        const schoolRequiredCredits = 8;           // 校訂科目必修學分要求
+        const professionalRequiredCredits = 110;     // 專業科目必修學分要求
+        const professionalElectiveCredits = 26;     // 專業科目選修學分要求
+        const generalElectiveCredits = 12;           // 一般科目選修學分要求
+        const totalRequiredCredits = generalRequiredCredits + schoolRequiredCredits + 
+                                    professionalRequiredCredits + professionalElectiveCredits + 
+                                    generalElectiveCredits;  // 總畢業學分要求
         
         // 直接按学期分组
         const groupedByTerm = {};
@@ -135,7 +187,7 @@ const GraduationRequirementsContent = ({ onClose }) => {
             termGrades: grades,
             failedCourses: failedCourses,
             stats: {
-              average: termInfo.average_score, // 直接使用average_score
+              average: termInfo.average_score, 
               totalCredits: termInfo.total_credits,
             }
           };
@@ -145,8 +197,35 @@ const GraduationRequirementsContent = ({ onClose }) => {
           return b.term - a.term;
         });
         
-        console.log("学期成绩数据:", semestersArray);
+        // 設置學期資料
         setSemesterData(semestersArray);
+        
+        // 設置總體進度資料，包含五個課程類別
+        setOverallProgress({
+          totalRequiredCredits,
+          totalEarnedCredits,
+          
+          // 1: 一般科目必修
+          generalRequiredCredits,
+          earnedGeneralRequiredCredits: generalRequiredEarned,
+          
+          // 2: 校訂科目必修
+          schoolRequiredCredits,
+          earnedSchoolRequiredCredits: schoolRequiredEarned,
+          
+          // 3: 專業科目必修
+          professionalRequiredCredits,
+          earnedProfessionalRequiredCredits: professionalRequiredEarned,
+          
+          // 4: 專業科目選修
+          professionalElectiveCredits,
+          earnedProfessionalElectiveCredits: professionalElectiveEarned,
+          
+          // 5: 一般科目選修
+          generalElectiveCredits,
+          earnedGeneralElectiveCredits: generalElectiveEarned
+        });
+        
       } catch (err) {
         setError(err.message);
         console.error("获取成绩数据错误:", err);
@@ -179,26 +258,6 @@ const GraduationRequirementsContent = ({ onClose }) => {
     }
   };
 
-  // 計算總體進度 - 使用每个学期的数据累加
-  const overallProgress = semesterData.length > 0 
-    ? {
-        totalRequiredCredits: 128, // 假設畢業要求128學分
-        totalEarnedCredits: semesterData.reduce((sum, sem) => {
-          // 使用学期中第一条记录的pass_credits，如果存在的话
-          if (sem.termGrades && sem.termGrades.length > 0 && sem.termGrades[0].pass_credits) {
-            return sum + Number(sem.termGrades[0].pass_credits);
-          }
-          return sum;
-        }, 0),
-        generalEducationCredits: 30, // 假設通識教育要求
-        earnedGeneralEducationCredits: 18, // 假設已修的通識學分
-        majorCredits: 75, // 假設主修要求
-        earnedMajorCredits: 60, // 假設已修的主修學分
-        electiveCredits: 23, // 假設選修要求
-        earnedElectiveCredits: 15, // 假設已修的選修學分
-      }
-    : null;
-
   // 获取学期描述
   const getTermText = (term) => {
     const termStr = String(term);
@@ -225,7 +284,7 @@ const GraduationRequirementsContent = ({ onClose }) => {
         </div>
       ) : (
         <>
-          {/* 畢業總進度 */}
+          {/* 畢業總進度 - 根據課程類別顯示 */}
           {overallProgress && (
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
               <h3 className="text-lg font-semibold mb-3 flex items-center">
@@ -234,6 +293,7 @@ const GraduationRequirementsContent = ({ onClose }) => {
               </h3>
               
               <div className="space-y-3">
+                {/* 總學分進度 */}
                 <div>
                   <div className="flex justify-between text-sm mb-1">
                     <span>總學分進度</span>
@@ -247,41 +307,72 @@ const GraduationRequirementsContent = ({ onClose }) => {
                   </div>
                 </div>
                 
+                {/* 一般科目必修 */}
                 <div>
                   <div className="flex justify-between text-sm mb-1">
-                    <span>通識教育</span>
-                    <span>{overallProgress.earnedGeneralEducationCredits}/{overallProgress.generalEducationCredits} 學分</span>
+                    <span>一般科目必修</span>
+                    <span>{overallProgress.earnedGeneralRequiredCredits}/{overallProgress.generalRequiredCredits} 學分</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
                     <div 
                       className="bg-green-500 h-2.5 rounded-full" 
-                      style={{ width: `${Math.min(100, (overallProgress.earnedGeneralEducationCredits / overallProgress.generalEducationCredits) * 100)}%` }}
+                      style={{ width: `${Math.min(100, (overallProgress.earnedGeneralRequiredCredits / overallProgress.generalRequiredCredits) * 100)}%` }}
                     ></div>
                   </div>
                 </div>
                 
+                {/* 校訂科目必修 */}
                 <div>
                   <div className="flex justify-between text-sm mb-1">
-                    <span>主修科目</span>
-                    <span>{overallProgress.earnedMajorCredits}/{overallProgress.majorCredits} 學分</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-                    <div 
-                      className="bg-purple-500 h-2.5 rounded-full" 
-                      style={{ width: `${Math.min(100, (overallProgress.earnedMajorCredits / overallProgress.majorCredits) * 100)}%` }}
-                    ></div>
-                  </div>
-                </div>
-                
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span>選修科目</span>
-                    <span>{overallProgress.earnedElectiveCredits}/{overallProgress.electiveCredits} 學分</span>
+                    <span>校訂科目必修</span>
+                    <span>{overallProgress.earnedSchoolRequiredCredits}/{overallProgress.schoolRequiredCredits} 學分</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
                     <div 
                       className="bg-yellow-500 h-2.5 rounded-full" 
-                      style={{ width: `${Math.min(100, (overallProgress.earnedElectiveCredits / overallProgress.electiveCredits) * 100)}%` }}
+                      style={{ width: `${Math.min(100, (overallProgress.earnedSchoolRequiredCredits / overallProgress.schoolRequiredCredits) * 100)}%` }}
+                    ></div>
+                  </div>
+                </div>
+                
+                {/* 專業科目必修 */}
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span>專業科目必修</span>
+                    <span>{overallProgress.earnedProfessionalRequiredCredits}/{overallProgress.professionalRequiredCredits} 學分</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                    <div 
+                      className="bg-purple-500 h-2.5 rounded-full" 
+                      style={{ width: `${Math.min(100, (overallProgress.earnedProfessionalRequiredCredits / overallProgress.professionalRequiredCredits) * 100)}%` }}
+                    ></div>
+                  </div>
+                </div>
+                
+                {/* 專業科目選修 */}
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span>專業科目選修</span>
+                    <span>{overallProgress.earnedProfessionalElectiveCredits}/{overallProgress.professionalElectiveCredits} 學分</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                    <div 
+                      className="bg-red-500 h-2.5 rounded-full" 
+                      style={{ width: `${Math.min(100, (overallProgress.earnedProfessionalElectiveCredits / overallProgress.professionalElectiveCredits) * 100)}%` }}
+                    ></div>
+                  </div>
+                </div>
+                
+                {/* 一般科目選修 */}
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span>一般科目選修</span>
+                    <span>{overallProgress.earnedGeneralElectiveCredits}/{overallProgress.generalElectiveCredits} 學分</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                    <div 
+                      className="bg-orange-500 h-2.5 rounded-full" 
+                      style={{ width: `${Math.min(100, (overallProgress.earnedGeneralElectiveCredits / overallProgress.generalElectiveCredits) * 100)}%` }}
                     ></div>
                   </div>
                 </div>
@@ -291,7 +382,7 @@ const GraduationRequirementsContent = ({ onClose }) => {
                 <Button 
                   variant="outline" 
                   className="w-full" 
-                  onClick={() => window.location.href = '/graduation/requirements'}
+                  onClick={() => window.location.href = '/requirements'}
                 >
                   查看畢業要求詳情
                 </Button>
